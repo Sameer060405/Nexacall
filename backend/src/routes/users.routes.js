@@ -1,0 +1,1 @@
+// Deprecated: All user routes replaced by JWT authentication in auth.routes.js

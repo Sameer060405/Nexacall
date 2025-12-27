@@ -1,0 +1,1 @@
+// Deprecated: All user controller logic replaced by JWT authentication in auth.controller.js
