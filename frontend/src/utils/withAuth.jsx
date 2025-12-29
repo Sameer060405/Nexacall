@@ -8,11 +8,14 @@ const withAuth = (WrappedComponent) => {
     const { user, loading } = useAuth();
 
     useEffect(() => {
+      // Only redirect if loading is complete AND user is null
+      // This prevents premature redirects during authentication
       if (!loading && !user) {
         navigate("/auth");
       }
     }, [user, loading, navigate]);
 
+    // Show loading state while authentication is being checked
     if (loading) {
       return (
         <div style={{ 
@@ -28,6 +31,7 @@ const withAuth = (WrappedComponent) => {
       );
     }
 
+    // Only render component if user exists, otherwise return null (redirect will happen)
     return user ? <WrappedComponent {...props} /> : null;
   };
 

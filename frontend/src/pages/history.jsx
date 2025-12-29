@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import withAuth from '../utils/withAuth';
 import authService from '../services/auth.service';
-import { HomeIcon } from '@heroicons/react/24/solid';
+import Sidebar from '../components/Sidebar';
 
 function History() {
   const [meetings, setMeetings] = useState([]);
@@ -40,29 +40,30 @@ function History() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white p-4">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <button className="btn btn-ghost btn-circle" onClick={() => navigate('/home')}>
-            <HomeIcon className="h-6 w-6" />
-          </button>
-          <h1 className="text-3xl font-bold">Meeting History</h1>
-        </div>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 overflow-y-auto p-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Meeting History</h1>
 
         {meetings.length === 0 ? (
-          <p className="text-gray-400 text-center mt-8">No meetings found.</p>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <p className="text-gray-500 text-center">No meetings found.</p>
+          </div>
         ) : (
           <div className="grid gap-4">
             {meetings.map((m, idx) => (
-              <div key={`${m.meetingCode}-${idx}`} className="card bg-base-100 shadow-xl">
-                <div className="card-body">
-                  <h2 className="card-title text-lg text-gray-300">Code: {m.meetingCode}</h2>
-                  <p className="text-gray-400">Date: {formatDate(m.date)}</p>
-                  <div className="card-actions justify-end">
-                    <button className="btn btn-primary" onClick={() => navigate(`/${m.meetingCode}`)}>
-                      Rejoin
-                    </button>
+              <div key={`${m.meetingCode}-${idx}`} className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-800">Code: {m.meetingCode}</h2>
+                    <p className="text-gray-600">Date: {formatDate(m.date)}</p>
                   </div>
+                  <button
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    onClick={() => navigate(`/${m.meetingCode}`)}
+                  >
+                    Rejoin
+                  </button>
                 </div>
               </div>
             ))}
@@ -70,10 +71,8 @@ function History() {
         )}
 
         {showSnackbar && (
-          <div className="toast toast-center toast-bottom">
-            <div className="alert alert-error">
-              <span>{snackbarMessage}</span>
-            </div>
+          <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+            <span>{snackbarMessage}</span>
           </div>
         )}
       </div>

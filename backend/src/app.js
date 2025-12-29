@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import { connectToSocket } from "./controllers/socketManager.js";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
+import meetingRoutes from "./routes/meeting.routes.js";
+import invitationRoutes from "./routes/invitation.routes.js";
 import 'dotenv/config';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -22,7 +24,22 @@ app.use(express.urlencoded({ limit: "40kb", extended: true }));
 app.use("/api/health", (req, res) => {
     res.json({ status: "ok" });
 });
+
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+});
+
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/meetings", meetingRoutes);
+app.use("/api/v1/invitations", invitationRoutes);
+
+// 404 handler for API routes
+app.use("/api/*", (req, res) => {
+    console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ error: `Route not found: ${req.method} ${req.originalUrl}` });
+});
 
 const start = async () => {
     const isProd = process.env.NODE_ENV === 'production';

@@ -217,9 +217,7 @@ export default function Authentication() {
         result = await login(formData.username, formData.password);
       }
 
-      if (result.success) {
-        navigate('/home');
-      }
+      // Navigation is handled by AuthContext, no need to navigate here
     } catch (error) {
       console.error('Authentication error:', error);
     }

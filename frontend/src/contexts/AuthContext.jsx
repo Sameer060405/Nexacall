@@ -66,8 +66,12 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.register(email, username, password);
       
       if (result.success) {
+        // Set user state first, then navigate after state update
         setUser(result.user);
-        navigate('/home');
+        // Use setTimeout to ensure state is updated before navigation
+        setTimeout(() => {
+          navigate('/home');
+        }, 0);
         return { success: true };
       } else {
         throw new Error(result.error);
@@ -92,8 +96,12 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.login(username, password);
       
       if (result.success) {
+        // Set user state first, then navigate after state update
         setUser(result.user);
-        navigate('/home');
+        // Use setTimeout to ensure state is updated before navigation
+        setTimeout(() => {
+          navigate('/home');
+        }, 0);
         return { success: true };
       } else {
         throw new Error(result.error);
