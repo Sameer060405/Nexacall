@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 
-const Chat = ({ messages, message, setMessage, sendMessage, currentUsername }) => {
+const Chat = ({ messages, message, setMessage, sendMessage, currentUsername, hideHeader }) => {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -16,12 +16,13 @@ const Chat = ({ messages, message, setMessage, sendMessage, currentUsername }) =
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1a1a2e] text-white">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 shrink-0">
-        <ChatBubbleLeftRightIcon className="w-5 h-5 text-blue-400" />
-        <h2 className="font-semibold">Chat</h2>
-      </div>
+    <div className="flex flex-col flex-1 min-h-0 bg-transparent text-white overflow-hidden">
+      {!hideHeader && (
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 shrink-0">
+          <ChatBubbleLeftRightIcon className="w-5 h-5 text-blue-400" />
+          <h2 className="font-semibold">Chat</h2>
+        </div>
+      )}
 
       {/* Message history - Zoom/Teams style */}
       <div

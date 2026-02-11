@@ -17,6 +17,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Uploaded recordings (backend)
+backend/uploads/
+
 # Build output
 dist/
 build/

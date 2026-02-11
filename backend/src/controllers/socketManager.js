@@ -26,9 +26,11 @@ export const connectToSocket = (server) => {
             socketToUsername[socket.id] = displayName;
 
             if (connections[path] === undefined) {
-                connections[path] = []
+                connections[path] = [];
             }
-            connections[path].push(socket.id);
+            if (!connections[path].includes(socket.id)) {
+                connections[path].push(socket.id);
+            }
             timeOnline[socket.id] = new Date();
 
             for (let a = 0; a < connections[path].length; a++) {
@@ -83,6 +85,17 @@ export const connectToSocket = (server) => {
                 const [, roomValue] = foundEntry;
                 roomValue.forEach((sid) => {
                     io.to(sid).emit("sticker", socket.id, displayName, stickerId);
+                });
+            }
+        });
+
+        socket.on("media-state", (audio, video) => {
+            const foundEntry = Object.entries(connections)
+                .find(([_, roomValue]) => roomValue.includes(socket.id));
+            if (foundEntry) {
+                const [, roomValue] = foundEntry;
+                roomValue.forEach((sid) => {
+                    io.to(sid).emit("media-state", socket.id, !!audio, !!video);
                 });
             }
         });

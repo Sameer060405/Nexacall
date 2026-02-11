@@ -7,6 +7,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import meetingRoutes from "./routes/meeting.routes.js";
 import invitationRoutes from "./routes/invitation.routes.js";
+import recordingRoutes from "./routes/recording.routes.js";
 import 'dotenv/config';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -47,6 +48,7 @@ app.use((req, res, next) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/meetings", meetingRoutes);
 app.use("/api/v1/invitations", invitationRoutes);
+app.use("/api/v1/recordings", recordingRoutes);
 
 // 404 handler for API routes
 app.use("/api/*", (req, res) => {
