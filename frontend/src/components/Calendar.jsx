@@ -19,17 +19,12 @@ const Calendar = ({ selectedDate, onDateSelect, meetings = [] }) => {
     const startingDayOfWeek = firstDay.getDay();
 
     const days = [];
-    
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
-
-    // Add all days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       days.push(new Date(year, month, day));
     }
-
     return days;
   };
 
@@ -69,23 +64,22 @@ const Calendar = ({ selectedDate, onDateSelect, meetings = [] }) => {
   };
 
   const days = getDaysInMonth(currentDate);
-  const today = new Date();
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => navigateMonth(-1)}
-          className="px-2 py-1 text-gray-600 hover:text-gray-800"
+          className="p-1.5 text-[#5e6c84] hover:text-[#1a1a1a] hover:bg-[#f8fafc] rounded-md transition-colors"
         >
           ←
         </button>
-        <h3 className="text-lg font-semibold text-gray-800">
+        <h3 className="text-sm font-semibold text-[#1a1a1a]">
           {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
         </h3>
         <button
           onClick={() => navigateMonth(1)}
-          className="px-2 py-1 text-gray-600 hover:text-gray-800"
+          className="p-1.5 text-[#5e6c84] hover:text-[#1a1a1a] hover:bg-[#f8fafc] rounded-md transition-colors"
         >
           →
         </button>
@@ -93,7 +87,7 @@ const Calendar = ({ selectedDate, onDateSelect, meetings = [] }) => {
 
       <div className="grid grid-cols-7 gap-1 mb-2">
         {dayNames.map(day => (
-          <div key={day} className="text-center text-xs font-medium text-gray-600 py-1">
+          <div key={day} className="text-center text-xs font-medium text-[#5e6c84] py-1">
             {day}
           </div>
         ))}
@@ -113,13 +107,13 @@ const Calendar = ({ selectedDate, onDateSelect, meetings = [] }) => {
             <button
               key={index}
               onClick={() => onDateSelect && onDateSelect(date)}
-              className={`aspect-square rounded-lg text-sm transition-colors ${
+              className={`aspect-square rounded-md text-sm font-medium transition-colors ${
                 isSelectedDate
-                  ? 'bg-purple-600 text-white'
+                  ? 'bg-[#0B5CFF] text-white'
                   : isTodayDate
-                  ? 'bg-purple-100 text-purple-600 font-semibold'
-                  : 'hover:bg-gray-100 text-gray-700'
-              } ${hasMeetingOnDate && !isSelectedDate ? 'ring-2 ring-purple-400' : ''}`}
+                  ? 'bg-[#eff6ff] text-[#0B5CFF]'
+                  : 'hover:bg-[#f8fafc] text-[#1a1a1a]'
+              } ${hasMeetingOnDate && !isSelectedDate ? 'ring-2 ring-[#0B5CFF]/30' : ''}`}
             >
               {date.getDate()}
             </button>
@@ -131,4 +125,3 @@ const Calendar = ({ selectedDate, onDateSelect, meetings = [] }) => {
 };
 
 export default Calendar;
-

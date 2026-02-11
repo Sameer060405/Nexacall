@@ -1,12 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
-  Avatar,
   Button,
-  CssBaseline,
   TextField,
-  Paper,
   Box,
-  Grid,
   Typography,
   Alert,
   CircularProgress,
@@ -18,15 +14,42 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
-const defaultTheme = createTheme({
+const theme = createTheme({
   palette: {
-    primary: {
-      main: '#1976d2',
+    primary: { main: '#0B5CFF' },
+    error: { main: '#dc2626' },
+    text: { primary: '#1a1a1a', secondary: '#5e6c84' },
+    background: { default: '#ffffff', paper: '#ffffff' },
+    divider: '#e2e8f0',
+  },
+  shape: { borderRadius: 6 },
+  typography: {
+    fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif',
+    h4: { fontWeight: 600, letterSpacing: '-0.02em', fontSize: '1.5rem' },
+    h6: { fontWeight: 600, letterSpacing: '-0.01em', fontSize: '1rem' },
+    body2: { color: '#5e6c84', fontSize: '0.875rem' },
+  },
+  components: {
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 6,
+            backgroundColor: '#fafbfc',
+            fontSize: '0.9375rem',
+            '& fieldset': { borderColor: '#dfe1e6' },
+            '&:hover fieldset': { borderColor: '#0B5CFF', borderWidth: 1 },
+            '&.Mui-focused fieldset': { borderColor: '#0B5CFF', borderWidth: 2 },
+          },
+          '& .MuiInputLabel-root': { fontSize: '0.875rem' },
+        },
+      },
     },
-    secondary: {
-      main: '#dc004e',
+    MuiButton: {
+      styleOverrides: {
+        root: { textTransform: 'none', borderRadius: 6, fontWeight: 600, fontSize: '0.9375rem' },
+      },
     },
   },
 });
@@ -61,7 +84,7 @@ const AuthForm = ({ isRegister, onSubmit, loading, formData, setFormData, errors
           disabled={loading}
         />
       )}
-      
+
       <TextField
         margin="normal"
         required
@@ -76,7 +99,7 @@ const AuthForm = ({ isRegister, onSubmit, loading, formData, setFormData, errors
         helperText={errors.username}
         disabled={loading}
       />
-      
+
       <TextField
         margin="normal"
         required
@@ -106,7 +129,7 @@ const AuthForm = ({ isRegister, onSubmit, loading, formData, setFormData, errors
           ),
         }}
       />
-      
+
       {isRegister && (
         <TextField
           margin="normal"
@@ -123,12 +146,12 @@ const AuthForm = ({ isRegister, onSubmit, loading, formData, setFormData, errors
           disabled={loading}
         />
       )}
-      
+
       <Button
         type="submit"
         fullWidth
         variant="contained"
-        sx={{ mt: 3, mb: 2 }}
+        sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1rem' }}
         disabled={loading}
       >
         {loading ? (
@@ -150,11 +173,8 @@ export default function Authentication() {
     confirmPassword: '',
   });
   const [errors, setErrors] = useState({});
-  
-  const { login, register, error: authError, clearError, loading } = useAuth();
-  const navigate = useNavigate();
 
-  
+  const { login, register, error: authError, loading } = useAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -191,7 +211,7 @@ export default function Authentication() {
       if (!/[a-z]/.test(formData.password)) passwordErrors.push('lowercase letter');
       if (!/[0-9]/.test(formData.password)) passwordErrors.push('number');
       if (!/[!@#$%^&*(),.?":{}|<>]/.test(formData.password)) passwordErrors.push('special character');
-      
+
       if (passwordErrors.length > 0) {
         newErrors.password = `Password must contain at least one ${passwordErrors.join(', ')}`;
       }
@@ -203,95 +223,97 @@ export default function Authentication() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     try {
-      let result;
-      
       if (isRegister) {
-        result = await register(formData.email, formData.username, formData.password);
+        await register(formData.email, formData.username, formData.password);
       } else {
-        result = await login(formData.username, formData.password);
+        await login(formData.username, formData.password);
       }
-
-      // Navigation is handled by AuthContext, no need to navigate here
     } catch (error) {
       console.error('Authentication error:', error);
     }
   };
 
   return (
-    <ThemeProvider theme={defaultTheme}>
-      <Grid container component="main" sx={{ height: '100vh' }}>
-        <CssBaseline />
-        <Grid
-          item
-          xs={false}
-          sm={4}
-          md={7}
-          sx={{
-            backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            textAlign: 'center',
-            p: 3,
-          }}
-        >
-          <Box>
-            <Typography variant="h2" component="h1" gutterBottom>
-              Welcome to LiveLink
+    <ThemeProvider theme={theme}>
+      <div className="min-h-screen flex flex-col md:flex-row">
+        {/* Left: Brand panel (Zoom/Skype style) */}
+        <div className="w-full md:w-[42%] min-h-[180px] md:min-h-screen bg-gradient-to-b from-[#0B5CFF] to-[#0047AB] flex flex-col justify-between p-8 md:p-12">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
+                <LockOutlinedIcon sx={{ color: '#fff', fontSize: 22 }} />
+              </div>
+              <span className="text-white font-semibold text-xl tracking-tight">NexaCall</span>
+            </div>
+          </div>
+          <div className="mt-auto hidden md:block">
+            <h2 className="text-white font-semibold text-2xl md:text-3xl tracking-tight leading-tight max-w-[280px]">
+              Video meetings and collaboration for teams
+            </h2>
+            <p className="text-white/80 text-sm mt-3 max-w-[260px]">
+              Sign in to join or host meetings, and stay connected.
+            </p>
+          </div>
+        </div>
+
+        {/* Right: Form panel */}
+        <div className="flex-1 flex flex-col md:justify-center bg-white py-10 md:py-12 px-6 md:px-16 lg:px-24">
+          <div className="w-full max-w-[400px] mx-auto">
+            <Typography component="h1" variant="h4" color="text.primary" sx={{ mb: 0.5 }}>
+              {isRegister ? 'Create your account' : 'Sign in to your account'}
             </Typography>
-            <Typography variant="h5">
-              Connect, collaborate, and create amazing experiences together
+            <Typography variant="body2" sx={{ mb: 3 }}>
+              {isRegister
+                ? 'Enter your details below to get started with Nexa Call.'
+                : 'Use your Nexa Call username and password to continue.'}
             </Typography>
-          </Box>
-        </Grid>
-        <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
-          <Box
-            sx={{
-              my: 8,
-              mx: 4,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
-              <LockOutlinedIcon />
-            </Avatar>
-            <Typography component="h1" variant="h4">
-              {isRegister ? 'Create Account' : 'Welcome Back'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {isRegister ? 'Join our community today' : 'Sign in to continue'}
-            </Typography>
-            
-            <Box sx={{ mt: 3, mb: 2 }}>
+
+            {/* Tabs: Sign In | Sign Up */}
+            <Box
+              sx={{
+                display: 'flex',
+                borderBottom: '2px solid',
+                borderColor: 'divider',
+                mb: 3,
+                '& .MuiButton-root': { minWidth: 0, px: 0, mr: 3, borderRadius: 0, pb: 1.5, pt: 0 },
+              }}
+            >
               <Button
-                variant={!isRegister ? 'contained' : 'outlined'}
+                variant="text"
                 onClick={() => setIsRegister(false)}
-                sx={{ mr: 1 }}
+                sx={{
+                  color: !isRegister ? 'primary.main' : 'text.secondary',
+                  fontWeight: 600,
+                  borderBottom: !isRegister ? '2px solid' : 'none',
+                  borderColor: 'primary.main',
+                  marginBottom: '-2px',
+                }}
               >
                 Sign In
               </Button>
               <Button
-                variant={isRegister ? 'contained' : 'outlined'}
+                variant="text"
                 onClick={() => setIsRegister(true)}
+                sx={{
+                  color: isRegister ? 'primary.main' : 'text.secondary',
+                  fontWeight: 600,
+                  borderBottom: isRegister ? '2px solid' : 'none',
+                  borderColor: 'primary.main',
+                  marginBottom: '-2px',
+                }}
               >
                 Sign Up
               </Button>
             </Box>
 
             <Fade in={!!authError}>
-              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              <Alert severity="error" sx={{ width: '100%', mb: 2, borderRadius: 1 }} variant="outlined">
                 {authError}
               </Alert>
             </Fade>
@@ -304,9 +326,26 @@ export default function Authentication() {
               setFormData={setFormData}
               errors={errors}
             />
-          </Box>
-        </Grid>
-      </Grid>
+
+            <Box sx={{ mt: 4, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1 }}>
+                By signing in, you agree to our Terms of Service and Privacy Policy.
+              </Typography>
+              <Box component="span" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                <Typography component="a" href="#" variant="caption" color="primary.main" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  Privacy
+                </Typography>
+                <Typography component="a" href="#" variant="caption" color="primary.main" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  Terms
+                </Typography>
+                <Typography component="a" href="#" variant="caption" color="primary.main" sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  Help
+                </Typography>
+              </Box>
+            </Box>
+          </div>
+        </div>
+      </div>
     </ThemeProvider>
   );
 }

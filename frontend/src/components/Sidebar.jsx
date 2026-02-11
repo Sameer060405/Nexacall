@@ -28,20 +28,18 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="h-screen w-64 bg-purple-600 text-white flex flex-col">
-      {/* Logo Section */}
-      <div className="p-6 border-b border-purple-500">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-            <VideoCameraIcon className="w-5 h-5 text-purple-600" />
+    <div className="h-screen w-[240px] flex-shrink-0 bg-[#0B5CFF] text-white flex flex-col border-r border-[#0047AB]/30">
+      <div className="p-5 border-b border-white/10">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center">
+            <VideoCameraIcon className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold">Video Buddy</span>
+          <span className="text-lg font-semibold tracking-tight">NexaCall</span>
         </div>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
+      <nav className="flex-1 p-3">
+        <ul className="space-y-0.5">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -49,13 +47,13 @@ const Sidebar = () => {
               <li key={item.path}>
                 <button
                   onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-purple-700 text-white'
-                      : 'text-purple-100 hover:bg-purple-700 hover:text-white'
+                      ? 'bg-white/20 text-white'
+                      : 'text-white/90 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5 flex-shrink-0" />
                   <span>{item.label}</span>
                 </button>
               </li>
@@ -64,13 +62,12 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      {/* Logout Button */}
-      <div className="p-4 border-t border-purple-500">
+      <div className="p-3 border-t border-white/10">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-purple-100 hover:bg-purple-700 hover:text-white transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-white/90 hover:bg-white/10 hover:text-white transition-colors"
         >
-          <ArrowRightOnRectangleIcon className="w-5 h-5" />
+          <ArrowRightOnRectangleIcon className="w-5 h-5 flex-shrink-0" />
           <span>Log out</span>
         </button>
       </div>
@@ -79,4 +76,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

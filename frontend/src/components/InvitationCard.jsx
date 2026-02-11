@@ -11,25 +11,24 @@ const InvitationCard = ({ invitation, onRSVP }) => {
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
-      <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+    <div className="flex items-center gap-3 p-3 bg-[#fafbfc] rounded-lg border border-[#e2e8f0]">
+      <div className="w-10 h-10 rounded-full bg-[#0B5CFF] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
         {getInitials(invitation.inviterName)}
       </div>
-      <div className="flex-1">
-        <p className="text-sm text-gray-800">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-[#1a1a1a]">
           <span className="font-semibold">{invitation.inviterName}</span> invited you to{' '}
           <span className="font-semibold">{invitation.meetingTitle}</span>
         </p>
       </div>
       <button
         onClick={() => onRSVP && onRSVP(invitation)}
-        className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+        className="px-4 py-2 bg-[#0B5CFF] text-white text-sm font-medium rounded-md hover:bg-[#0047AB] transition-colors flex-shrink-0"
       >
-        RSVP
+        Accept
       </button>
     </div>
   );
 };
 
 export default InvitationCard;
-

@@ -10,7 +10,7 @@ export default function LandingPage() {
         <div className='landingPageContainer'>
             <nav>
                 <div className='navHeader'>
-                    <h2>LiveLink Meeting App</h2>
+                    <h2>Nexa Call Meeting App</h2>
                 </div>
                 <div className='navlist'>
                     <p onClick={() => {
@@ -34,7 +34,7 @@ export default function LandingPage() {
                 <div>
                     <h1><span style={{ color: "#FF9839" }}>Connect</span> <span style={{ color: "#000" }}>with your loved Ones</span></h1>
 
-                    <p style={{ color: "#000" }}>LiveLink Meeting App</p>
+                    <p style={{ color: "#000" }}>Nexa Call Meeting App</p>
                     <div role='button'>
                         <Link to={"/auth"}>Get Started</Link>
                     </div>

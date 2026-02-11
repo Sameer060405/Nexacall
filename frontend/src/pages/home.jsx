@@ -218,30 +218,28 @@ function HomeComponent() {
 
   if (loading) {
     return (
-      <div className="flex h-screen">
+      <div className="flex h-screen bg-[#f8fafc]">
         <Sidebar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-600">Loading...</div>
+          <p className="text-sm text-[#5e6c84]">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-[#f8fafc]">
       <Sidebar />
-      
+
       <div className="flex-1 overflow-y-auto">
-        <div className="p-8">
-          {/* Top Section: Greeting and Action Cards */}
+        <div className="p-6 md:p-8">
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
+            <div className="mb-6">
               <UserProfile />
             </div>
             <ActionCards onScheduleMeeting={handleScheduleMeeting} />
           </div>
 
-          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Agenda */}
             <div className="lg:col-span-2">
@@ -273,27 +271,26 @@ function HomeComponent() {
         </div>
       </div>
 
-      {/* Meeting created success modal: link + join code */}
       {createdMeetingSuccess && createdMeetingSuccess.meetingCode && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">Meeting created</h3>
-            <p className="text-sm text-gray-600 mb-4">Share the link or joining code with participants. If you set a password, they will be asked for it when they join.</p>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-[#e2e8f0] shadow-lg max-w-md w-full p-6">
+            <h3 className="text-base font-semibold text-[#1a1a1a] mb-1">Meeting created</h3>
+            <p className="text-sm text-[#5e6c84] mb-4">Share the link or code with participants. If you set a password, they will be prompted when joining.</p>
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Joining code</label>
-                <p className="font-mono text-lg font-semibold text-gray-800">{createdMeetingSuccess.meetingCode}</p>
+                <label className="block text-xs font-medium text-[#5e6c84] mb-1">Joining code</label>
+                <p className="font-mono text-base font-semibold text-[#1a1a1a]">{createdMeetingSuccess.meetingCode}</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Meeting link</label>
-                <p className="text-sm text-gray-700 break-all">{getMeetingJoinLink(createdMeetingSuccess.meetingCode)}</p>
+                <label className="block text-xs font-medium text-[#5e6c84] mb-1">Meeting link</label>
+                <p className="text-sm text-[#1a1a1a] break-all">{getMeetingJoinLink(createdMeetingSuccess.meetingCode)}</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => copyMeetingLink(createdMeetingSuccess.meetingCode)}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                className="flex-1 px-4 py-2.5 bg-[#0B5CFF] text-white rounded-md hover:bg-[#0047AB] text-sm font-medium transition-colors"
               >
                 Copy link
               </button>
@@ -303,7 +300,7 @@ function HomeComponent() {
                   setCreatedMeetingSuccess(null);
                   loadDashboardData(false);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
+                className="px-4 py-2.5 border border-[#e2e8f0] rounded-md text-[#5e6c84] hover:bg-[#f8fafc] text-sm font-medium transition-colors"
               >
                 Done
               </button>

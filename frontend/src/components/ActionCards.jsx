@@ -51,10 +51,12 @@ const ActionCards = ({ onScheduleMeeting }) => {
             <button
               key={index}
               onClick={action.onClick}
-              className="flex-1 bg-white rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow border border-gray-200 flex flex-col items-center gap-2"
+              className="flex-1 bg-white rounded-lg p-5 border border-[#e2e8f0] hover:border-[#0B5CFF]/30 hover:shadow-sm transition-all flex flex-col items-center gap-3 min-w-0"
             >
-              <Icon className="w-8 h-8 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">{action.label}</span>
+              <div className="w-12 h-12 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+                <Icon className="w-6 h-6 text-[#0B5CFF]" />
+              </div>
+              <span className="text-sm font-medium text-[#1a1a1a]">{action.label}</span>
             </button>
           );
         })}
@@ -69,4 +71,3 @@ const ActionCards = ({ onScheduleMeeting }) => {
 };
 
 export default ActionCards;
-

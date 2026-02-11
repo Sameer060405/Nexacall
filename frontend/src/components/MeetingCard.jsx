@@ -22,21 +22,22 @@ const MeetingCard = ({ meeting, onReschedule, onChangeAttendance, onConnect, onD
   const joinLink = getMeetingJoinLink ? getMeetingJoinLink(meeting.meetingCode) : '';
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-md border border-gray-200">
+    <div className="bg-white rounded-lg p-4 border border-[#e2e8f0] hover:border-[#dfe1e6] transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-800 mb-1">{meeting.title || 'Meeting'}</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="font-semibold text-[#1a1a1a] text-[0.9375rem] mb-1">{meeting.title || 'Meeting'}</h3>
+          <p className="text-sm text-[#5e6c84]">
             {formatTimeRange(meeting.startTime, meeting.endTime)}
           </p>
           {meeting.meetingCode && (
             <div className="mt-2 space-y-1">
-              <p className="text-xs text-gray-500">
-                <span className="font-medium text-gray-600">Joining code:</span> <span className="font-mono">{meeting.meetingCode}</span>
+              <p className="text-xs text-[#5e6c84]">
+                <span className="font-medium text-[#1a1a1a]">Code:</span>{' '}
+                <span className="font-mono">{meeting.meetingCode}</span>
               </p>
               {joinLink && (
-                <p className="text-xs text-gray-500 truncate" title={joinLink}>
-                  <span className="font-medium text-gray-600">Link:</span> {joinLink}
+                <p className="text-xs text-[#5e6c84] truncate" title={joinLink}>
+                  <span className="font-medium text-[#1a1a1a]">Link:</span> {joinLink}
                 </p>
               )}
             </div>
@@ -46,15 +47,15 @@ const MeetingCard = ({ meeting, onReschedule, onChangeAttendance, onConnect, onD
           {isScheduledMeeting && onConnect && (
             <button
               onClick={() => onConnect(meeting)}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="px-4 py-2 bg-[#0B5CFF] text-white text-sm font-medium rounded-md hover:bg-[#0047AB] transition-colors"
             >
-              Connect
+              Join
             </button>
           )}
           {isScheduledMeeting && onCopyLink && meeting.meetingCode && (
             <button
               onClick={() => onCopyLink(meeting.meetingCode)}
-              className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center gap-1"
+              className="px-3 py-2 text-sm rounded-md border border-[#e2e8f0] text-[#5e6c84] hover:bg-[#f8fafc] flex items-center gap-1.5"
               title="Copy meeting link"
             >
               <LinkIcon className="w-4 h-4" />
@@ -64,7 +65,7 @@ const MeetingCard = ({ meeting, onReschedule, onChangeAttendance, onConnect, onD
           {onDelete && (
             <button
               onClick={() => onDelete(meeting)}
-              className="px-3 py-2 text-sm rounded-lg border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
+              className="px-3 py-2 text-sm rounded-md border border-[#fecaca] text-[#dc2626] hover:bg-[#fef2f2] flex items-center gap-1.5"
               title="Delete meeting"
             >
               <TrashIcon className="w-4 h-4" />
@@ -76,7 +77,7 @@ const MeetingCard = ({ meeting, onReschedule, onChangeAttendance, onConnect, onD
               {onReschedule && (
                 <button
                   onClick={() => onReschedule(meeting)}
-                  className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                  className="px-3 py-2 bg-[#0B5CFF] text-white text-sm font-medium rounded-md hover:bg-[#0047AB] transition-colors"
                 >
                   Reschedule
                 </button>
@@ -84,7 +85,7 @@ const MeetingCard = ({ meeting, onReschedule, onChangeAttendance, onConnect, onD
               {onChangeAttendance && (
                 <button
                   onClick={() => onChangeAttendance(meeting)}
-                  className="px-3 py-1 bg-white text-gray-700 text-sm rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                  className="px-3 py-2 text-sm rounded-md border border-[#e2e8f0] text-[#5e6c84] hover:bg-[#f8fafc] transition-colors"
                 >
                   Change attendance
                 </button>
@@ -98,4 +99,3 @@ const MeetingCard = ({ meeting, onReschedule, onChangeAttendance, onConnect, onD
 };
 
 export default MeetingCard;
-

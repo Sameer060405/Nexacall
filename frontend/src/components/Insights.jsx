@@ -3,7 +3,7 @@ import React from 'react';
 const Insights = ({ metrics = {} }) => {
   const insights = [
     {
-      label: 'Number of meetings you hosted this week',
+      label: 'Meetings you hosted this week',
       value: metrics.meetingsHostedThisWeek || 0,
     },
     {
@@ -13,13 +13,13 @@ const Insights = ({ metrics = {} }) => {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Insights</h3>
+    <div className="bg-white rounded-lg border border-[#e2e8f0] p-4">
+      <h3 className="text-sm font-semibold text-[#1a1a1a] mb-4">Insights</h3>
       <div className="space-y-4">
         {insights.map((insight, index) => (
           <div key={index}>
-            <p className="text-sm text-gray-600 mb-1">{insight.label}</p>
-            <p className="text-2xl font-bold text-purple-600">{insight.value}</p>
+            <p className="text-sm text-[#5e6c84] mb-1">{insight.label}</p>
+            <p className="text-xl font-semibold text-[#0B5CFF]">{insight.value}</p>
           </div>
         ))}
       </div>
@@ -28,4 +28,3 @@ const Insights = ({ metrics = {} }) => {
 };
 
 export default Insights;
-

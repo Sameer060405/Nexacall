@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const UserProfile = () => {
   const { user } = useAuth();
-  
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -17,18 +17,20 @@ const UserProfile = () => {
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex flex-col">
-        <h2 className="text-2xl font-semibold text-gray-800">
-          {getGreeting()}, {user?.username || 'User'}!
-        </h2>
-      </div>
-      <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-        {getInitials(user?.username)}
+    <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
+        <div className="w-11 h-11 rounded-full bg-[#0B5CFF] flex items-center justify-center text-white font-semibold text-base">
+          {getInitials(user?.username)}
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-[#1a1a1a] tracking-tight">
+            {getGreeting()}, {user?.username || 'User'}
+          </h2>
+          <p className="text-sm text-[#5e6c84]">Your dashboard</p>
+        </div>
       </div>
     </div>
   );
 };
 
 export default UserProfile;
-

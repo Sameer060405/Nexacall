@@ -58,7 +58,7 @@ let dbMode = 'unknown'; // 'atlas' | 'memory' | 'local'
 
 const start = async () => {
     const isProd = process.env.NODE_ENV === 'production';
-    const uri = process.env.MONGODB_URI || (isProd ? null : 'mongodb://127.0.0.1:27017/livelink_dev');
+    const uri = process.env.MONGODB_URI || (isProd ? null : 'mongodb://127.0.0.1:27017/nexacall_dev');
 
     if (!process.env.MONGODB_URI && !isProd) {
         console.warn('MONGODB_URI is not set in .env — create backend/.env with MONGODB_URI=your_atlas_connection_string so register/login save to Atlas.');

@@ -94,72 +94,71 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg border border-[#e2e8f0] shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-[#e2e8f0]">
           <div className="flex items-center gap-2">
-            <VideoCameraIcon className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-800">Schedule meeting</h2>
+            <div className="w-9 h-9 rounded-lg bg-[#eff6ff] flex items-center justify-center">
+              <VideoCameraIcon className="w-5 h-5 text-[#0B5CFF]" />
+            </div>
+            <h2 className="text-base font-semibold text-[#1a1a1a]">Schedule meeting</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-1.5 text-[#5e6c84] hover:text-[#1a1a1a] hover:bg-[#f8fafc] rounded-md transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Schedule Meeting</h1>
+            <h3 className="text-lg font-semibold text-[#1a1a1a] mb-1">Schedule Meeting</h3>
+            <p className="text-sm text-[#5e6c84]">Set date, time, and meeting options.</p>
           </div>
 
-          {/* Topic */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#1a1a1a] mb-2">
               Topic
             </label>
             <input
               type="text"
               value={formData.topic}
               onChange={(e) => handleChange('topic', e.target.value)}
-              placeholder="Filmora Team Zoom Meeting"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="e.g. Team standup"
+              className="w-full px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] text-[#1a1a1a] placeholder-[#5e6c84] focus:outline-none focus:border-[#0B5CFF] focus:ring-1 focus:ring-[#0B5CFF]"
             />
           </div>
 
-          {/* Start Time and Duration */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start:
+              <label className="block text-sm font-medium text-[#1a1a1a] mb-2">
+                Start
               </label>
               <div className="space-y-2">
                 <input
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => handleChange('startDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF] focus:ring-1 focus:ring-[#0B5CFF]"
                 />
                 <input
                   type="time"
                   value={formData.startTime}
                   onChange={(e) => handleChange('startTime', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF] focus:ring-1 focus:ring-[#0B5CFF]"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Duration:
+              <label className="block text-sm font-medium text-[#1a1a1a] mb-2">
+                Duration
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <select
                   value={formData.durationHours}
                   onChange={(e) => handleChange('durationHours', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF]"
                 >
                   {hourOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -168,7 +167,7 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
                 <select
                   value={formData.durationMinutes}
                   onChange={(e) => handleChange('durationMinutes', e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF]"
                 >
                   {minuteOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -178,23 +177,22 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
             </div>
           </div>
 
-          {/* Recurring Meeting & Time Zone */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.recurring}
                 onChange={(e) => handleChange('recurring', e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
               />
-              <span className="text-sm text-gray-700">Recurring meeting</span>
+              <span className="text-sm text-[#1a1a1a]">Recurring meeting</span>
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-700">Time Zone:</span>
+              <span className="text-sm text-[#5e6c84]">Time zone</span>
               <select
                 value={formData.timeZone}
                 onChange={(e) => handleChange('timeZone', e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF] text-sm"
               >
                 {timeZones.map(tz => (
                   <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -203,9 +201,8 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
             </div>
           </div>
 
-          {/* Meeting ID */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Meeting ID</h3>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Meeting ID</h4>
             <div className="space-y-2">
               <label className="flex items-center gap-2">
                 <input
@@ -214,9 +211,9 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
                   value="auto"
                   checked={formData.meetingIdType === 'auto'}
                   onChange={(e) => handleChange('meetingIdType', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]"
                 />
-                <span className="text-sm text-gray-700">Generate Automatically</span>
+                <span className="text-sm text-[#1a1a1a]">Generate automatically</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -225,9 +222,9 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
                   value="personal"
                   checked={formData.meetingIdType === 'personal'}
                   onChange={(e) => handleChange('meetingIdType', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]"
                 />
-                <span className="text-sm text-gray-700">Personal Meeting ID</span>
+                <span className="text-sm text-[#1a1a1a]">Personal meeting ID</span>
               </label>
               {formData.meetingIdType === 'personal' && (
                 <div className="flex items-center gap-2 ml-6">
@@ -236,12 +233,12 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
                     value={formData.personalMeetingId}
                     onChange={(e) => handleChange('personalMeetingId', e.target.value)}
                     placeholder="Enter or generate code"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF] focus:ring-1 focus:ring-[#0B5CFF] text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleGenerateCode}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                    className="px-4 py-2 bg-[#f8fafc] text-[#5e6c84] border border-[#e2e8f0] rounded-md hover:bg-[#f1f5f9] transition-colors text-sm font-medium"
                   >
                     Generate
                   </button>
@@ -250,184 +247,109 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
             </div>
           </div>
 
-          {/* Password */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Password</h3>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Password</h4>
             <label className="flex items-center gap-2 mb-3">
               <input
                 type="checkbox"
                 checked={formData.requirePassword}
                 onChange={(e) => handleChange('requirePassword', e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
               />
-              <span className="text-sm text-gray-700">Require meeting password</span>
+              <span className="text-sm text-[#1a1a1a]">Require meeting password</span>
             </label>
             {formData.requirePassword && (
               <input
                 type="text"
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="010895"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter password"
+                className="w-full px-3 py-2 border border-[#dfe1e6] rounded-md bg-[#fafbfc] focus:outline-none focus:border-[#0B5CFF] focus:ring-1 focus:ring-[#0B5CFF] text-sm"
               />
             )}
           </div>
 
-          {/* Video */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Video</h3>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Video</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-gray-600 mb-2">Host</p>
+                <p className="text-xs text-[#5e6c84] mb-2">Host</p>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="hostVideo"
-                      value="on"
-                      checked={formData.hostVideo === 'on'}
-                      onChange={(e) => handleChange('hostVideo', e.target.value)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">On</span>
+                    <input type="radio" name="hostVideo" value="on" checked={formData.hostVideo === 'on'} onChange={(e) => handleChange('hostVideo', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                    <span className="text-sm text-[#1a1a1a]">On</span>
                   </label>
                   <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="hostVideo"
-                      value="off"
-                      checked={formData.hostVideo === 'off'}
-                      onChange={(e) => handleChange('hostVideo', e.target.value)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">Off</span>
+                    <input type="radio" name="hostVideo" value="off" checked={formData.hostVideo === 'off'} onChange={(e) => handleChange('hostVideo', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                    <span className="text-sm text-[#1a1a1a]">Off</span>
                   </label>
                 </div>
               </div>
               <div>
-                <p className="text-xs text-gray-600 mb-2">Participants</p>
+                <p className="text-xs text-[#5e6c84] mb-2">Participants</p>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="participantVideo"
-                      value="on"
-                      checked={formData.participantVideo === 'on'}
-                      onChange={(e) => handleChange('participantVideo', e.target.value)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">On</span>
+                    <input type="radio" name="participantVideo" value="on" checked={formData.participantVideo === 'on'} onChange={(e) => handleChange('participantVideo', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                    <span className="text-sm text-[#1a1a1a]">On</span>
                   </label>
                   <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="participantVideo"
-                      value="off"
-                      checked={formData.participantVideo === 'off'}
-                      onChange={(e) => handleChange('participantVideo', e.target.value)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">Off</span>
+                    <input type="radio" name="participantVideo" value="off" checked={formData.participantVideo === 'off'} onChange={(e) => handleChange('participantVideo', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                    <span className="text-sm text-[#1a1a1a]">Off</span>
                   </label>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Audio */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Audio</h3>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Audio</h4>
             <div className="space-y-2">
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="audio"
-                  value="telephone"
-                  checked={formData.audio === 'telephone'}
-                  onChange={(e) => handleChange('audio', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Telephone</span>
+                <input type="radio" name="audio" value="telephone" checked={formData.audio === 'telephone'} onChange={(e) => handleChange('audio', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                <span className="text-sm text-[#1a1a1a]">Telephone</span>
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="audio"
-                  value="computer"
-                  checked={formData.audio === 'computer'}
-                  onChange={(e) => handleChange('audio', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Computer Audio</span>
+                <input type="radio" name="audio" value="computer" checked={formData.audio === 'computer'} onChange={(e) => handleChange('audio', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                <span className="text-sm text-[#1a1a1a]">Computer audio</span>
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="audio"
-                  value="both"
-                  checked={formData.audio === 'both'}
-                  onChange={(e) => handleChange('audio', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Telephone and Computer Audio</span>
+                <input type="radio" name="audio" value="both" checked={formData.audio === 'both'} onChange={(e) => handleChange('audio', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                <span className="text-sm text-[#1a1a1a]">Telephone and computer audio</span>
               </label>
             </div>
           </div>
 
-          {/* Calendar */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 mb-3">Calendar</h3>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Calendar</h4>
             <div className="space-y-2">
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="calendar"
-                  value="outlook"
-                  checked={formData.calendar === 'outlook'}
-                  onChange={(e) => handleChange('calendar', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Outlook</span>
+                <input type="radio" name="calendar" value="outlook" checked={formData.calendar === 'outlook'} onChange={(e) => handleChange('calendar', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                <span className="text-sm text-[#1a1a1a]">Outlook</span>
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="calendar"
-                  value="google"
-                  checked={formData.calendar === 'google'}
-                  onChange={(e) => handleChange('calendar', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Google Calendar</span>
+                <input type="radio" name="calendar" value="google" checked={formData.calendar === 'google'} onChange={(e) => handleChange('calendar', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                <span className="text-sm text-[#1a1a1a]">Google Calendar</span>
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="calendar"
-                  value="other"
-                  checked={formData.calendar === 'other'}
-                  onChange={(e) => handleChange('calendar', e.target.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Other Calendars</span>
+                <input type="radio" name="calendar" value="other" checked={formData.calendar === 'other'} onChange={(e) => handleChange('calendar', e.target.value)} className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] focus:ring-[#0B5CFF]" />
+                <span className="text-sm text-[#1a1a1a]">Other</span>
               </label>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#e2e8f0]">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-5 py-2 border border-[#e2e8f0] rounded-md text-[#5e6c84] hover:bg-[#f8fafc] transition-colors text-sm font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-5 py-2 bg-[#0B5CFF] text-white rounded-md hover:bg-[#0047AB] transition-colors text-sm font-medium"
             >
-              Schedule
+              Schedule meeting
             </button>
           </div>
         </form>

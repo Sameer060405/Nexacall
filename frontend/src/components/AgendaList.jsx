@@ -4,16 +4,16 @@ import MeetingCard from './MeetingCard';
 const AgendaList = ({ meetings = [], onReschedule, onChangeAttendance, onConnect, onDelete, getMeetingJoinLink, onCopyLink }) => {
   if (meetings.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Your agenda today:</h2>
-        <p className="text-gray-500 text-center py-8">No meetings scheduled for today.</p>
+      <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
+        <h2 className="text-base font-semibold text-[#1a1a1a] mb-4">Your agenda today</h2>
+        <p className="text-[#5e6c84] text-sm text-center py-8">No meetings scheduled for today.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">Your agenda today:</h2>
+    <div className="bg-white rounded-lg border border-[#e2e8f0] p-6">
+      <h2 className="text-base font-semibold text-[#1a1a1a] mb-4">Your agenda today</h2>
       <div className="space-y-3">
         {meetings.map((meeting, index) => (
           <MeetingCard
@@ -33,4 +33,3 @@ const AgendaList = ({ meetings = [], onReschedule, onChangeAttendance, onConnect
 };
 
 export default AgendaList;
-
