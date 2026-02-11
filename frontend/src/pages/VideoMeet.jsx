@@ -12,6 +12,7 @@ import {
     StopCircleIcon
 } from '@heroicons/react/24/solid'; // Import Heroicons
 import server from '../environment';
+import meetingService from '../services/meeting.service';
 import Chat from './Chat';
 import Video from './Video';
 import Lobby from './Lobby';
@@ -37,7 +38,7 @@ export default function VideoMeetComponent() {
 
     let [audioAvailable, setAudioAvailable] = useState(true);
 
-    let [video, setVideo] = useState([]);
+    let [video, setVideo] = useState();
 
     let [audio, setAudio] = useState();
 
@@ -57,6 +58,22 @@ export default function VideoMeetComponent() {
 
     let [username, setUsername] = useState("");
 
+    // Meeting password gate (for scheduled meetings with password)
+    const [meetingCode, setMeetingCode] = useState(() => {
+        const path = typeof window !== 'undefined' ? window.location.pathname : '';
+        return path.startsWith('/meeting/') ? (path.split('/')[2] || '') : (path.slice(1).split('/')[0] || '');
+    });
+    const [meetingCheckDone, setMeetingCheckDone] = useState(false);
+    const [requiresPassword, setRequiresPassword] = useState(false);
+    const [passwordVerified, setPasswordVerified] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        const path = window.location.pathname;
+        const code = path.startsWith('/meeting/') ? (path.split('/')[2] || '') : (path.slice(1).split('/')[0] || '');
+        return code ? sessionStorage.getItem(`meeting_${code}_verified`) === 'true' : false;
+    });
+    const [joinPassword, setJoinPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+
     const videoRef = useRef([])
 
     let [videos, setVideos] = useState([])
@@ -64,10 +81,26 @@ export default function VideoMeetComponent() {
 
 
     useEffect(() => {
-        console.log("HELLO")
         getPermissions();
-
     }, []);
+
+    // Check if this meeting requires a password (scheduled meeting with password)
+    useEffect(() => {
+        if (!meetingCode) {
+            setMeetingCheckDone(true);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            const result = await meetingService.getMeetingByCode(meetingCode);
+            if (cancelled) return;
+            setMeetingCheckDone(true);
+            if (result.success && result.exists && result.requiresPassword) {
+                setRequiresPassword(true);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [meetingCode]);
 
     let getDislayMedia = () => {
         if (screen) {
@@ -82,22 +115,27 @@ export default function VideoMeetComponent() {
 
     const getPermissions = async () => {
         try {
-            const videoPermission = await navigator.mediaDevices.getUserMedia({ video: true });
-            if (videoPermission) {
-                setVideoAvailable(true);
-                console.log('Video permission granted');
-            } else {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.error('getUserMedia not supported');
                 setVideoAvailable(false);
-                console.log('Video permission denied');
+                setAudioAvailable(false);
+                return;
             }
 
-            const audioPermission = await navigator.mediaDevices.getUserMedia({ audio: true });
-            if (audioPermission) {
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            
+            if (stream) {
+                setVideoAvailable(true);
                 setAudioAvailable(true);
-                console.log('Audio permission granted');
-            } else {
-                setAudioAvailable(false);
-                console.log('Audio permission denied');
+                console.log('Permissions granted');
+                
+                if (localVideoref.current) {
+                    localVideoref.current.srcObject = stream;
+                }
+                window.localStream = stream;
             }
 
             if (navigator.mediaDevices.getDisplayMedia) {
@@ -105,35 +143,28 @@ export default function VideoMeetComponent() {
             } else {
                 setScreenAvailable(false);
             }
-
-            if (videoAvailable || audioAvailable) {
-                const userMediaStream = await navigator.mediaDevices.getUserMedia({ video: videoAvailable, audio: audioAvailable });
-                if (userMediaStream) {
-                    window.localStream = userMediaStream;
-                    if (localVideoref.current) {
-                        localVideoref.current.srcObject = userMediaStream;
-                    }
-                }
-            }
         } catch (error) {
-            console.log(error);
+            console.log('Permission error:', error);
+            setVideoAvailable(false);
+            setAudioAvailable(false);
         }
     };
 
     useEffect(() => {
         if (video !== undefined && audio !== undefined) {
             getUserMedia();
-            console.log("SET STATE HAS ", video, audio);
+
 
         }
 
 
     }, [video, audio])
-    let getMedia = () => {
-        setVideo(videoAvailable);
-        setAudio(audioAvailable);
+    let getMedia = (overrideVideo, overrideAudio) => {
+        const v = overrideVideo !== undefined ? overrideVideo : (video !== undefined ? video : videoAvailable);
+        const a = overrideAudio !== undefined ? overrideAudio : (audio !== undefined ? audio : audioAvailable);
+        setVideo(v);
+        setAudio(a);
         connectToSocketServer();
-
     }
 
 
@@ -189,11 +220,15 @@ export default function VideoMeetComponent() {
         })
     }
 
-    let getUserMedia = () => {
+    let getUserMedia = (stream) => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.error('getUserMedia not available');
+            return;
+        }
+
         if ((video && videoAvailable) || (audio && audioAvailable)) {
             navigator.mediaDevices.getUserMedia({ video: video, audio: audio })
                 .then(getUserMediaSuccess)
-                .then((stream) => { })
                 .catch((e) => console.log(e))
         } else {
             try {
@@ -423,23 +458,67 @@ export default function VideoMeetComponent() {
         setMessage("");
     }
 
-    let connect = () => {
+    let connect = (overrides) => {
         setAskForUsername(false);
-        getMedia();
-    }
+        const v = overrides?.video !== undefined ? overrides.video : videoAvailable;
+        const a = overrides?.audio !== undefined ? overrides.audio : audioAvailable;
+        getMedia(v, a);
+    };
 
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+        setPasswordError('');
+        const result = await meetingService.verifyMeetingJoin(meetingCode, joinPassword);
+        if (result.success) {
+            sessionStorage.setItem(`meeting_${meetingCode}_verified`, 'true');
+            setPasswordVerified(true);
+            setJoinPassword('');
+        } else {
+            setPasswordError(result.error || 'Incorrect password');
+        }
+    };
+
+    const showPasswordForm = meetingCheckDone && requiresPassword && !passwordVerified;
+    const showLobby = meetingCheckDone && !showPasswordForm && askForUsername;
+    const showCall = meetingCheckDone && !showPasswordForm && !askForUsername;
 
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col"> {/* Main container */}
 
-            {askForUsername === true ? (
+            {!meetingCheckDone ? (
+                <div className="flex-1 flex items-center justify-center">
+                    <p className="text-gray-400">Checking meeting...</p>
+                </div>
+            ) : showPasswordForm ? (
+                <div className="flex-1 flex items-center justify-center p-4">
+                    <div className="bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-md">
+                        <h2 className="text-xl font-semibold mb-2">Meeting password required</h2>
+                        <p className="text-gray-400 text-sm mb-4">This meeting is protected. Enter the password to join.</p>
+                        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+                            <input
+                                type="password"
+                                value={joinPassword}
+                                onChange={(e) => { setJoinPassword(e.target.value); setPasswordError(''); }}
+                                placeholder="Enter meeting password"
+                                className="input input-bordered w-full bg-gray-700 text-white placeholder-gray-400"
+                                autoFocus
+                            />
+                            {passwordError && <p className="text-sm text-red-400">{passwordError}</p>}
+                            <button type="submit" className="btn btn-primary w-full">Join meeting</button>
+                        </form>
+                    </div>
+                </div>
+            ) : showLobby ? (
                 <Lobby
                     username={username}
                     localVideoref={localVideoref}
                     setUsername={setUsername}
                     connect={connect}
+                    meetingCode={meetingCode}
+                    videoAvailable={videoAvailable}
+                    audioAvailable={audioAvailable}
                 />
-            ) : (
+            ) : showCall ? (
                 <div className="flex flex-1 relative"> {/* Main content area: video grid + chat */}
                     {/* Video Grid will go here */}
                     <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -532,7 +611,7 @@ export default function VideoMeetComponent() {
                         />
                     </motion.div>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }

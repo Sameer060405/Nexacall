@@ -43,13 +43,17 @@ app.use("/api/*", (req, res) => {
 
 const start = async () => {
     const isProd = process.env.NODE_ENV === 'production';
-    const uri = isProd ? process.env.MONGODB_URI : 'mongodb://127.0.0.1:27017/livelink_dev';
+    const uri = process.env.MONGODB_URI || (isProd ? null : 'mongodb://127.0.0.1:27017/livelink_dev');
     try {
-        const connectionDb = await mongoose.connect(uri, { serverSelectionTimeoutMS: 2000 });
-        console.log(`ENV: ${process.env.NODE_ENV || 'development'} | Mongo Host: ${connectionDb.connection.host}`)
+        if (uri) {
+            const connectionDb = await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
+            console.log(`ENV: ${process.env.NODE_ENV || 'development'} | Mongo Host: ${connectionDb.connection.host}`);
+        } else {
+            throw new Error('MONGODB_URI is required in production');
+        }
     } catch (err) {
-        if (!isProd) {
-            console.warn(`Local MongoDB not available at mongodb://127.0.0.1:27017/livelink_dev. Starting in-memory MongoDB...`);
+        if (!isProd && !process.env.MONGODB_URI) {
+            console.warn(`Local MongoDB not available. Starting in-memory MongoDB...`);
             const mongod = await MongoMemoryServer.create();
             const memUri = mongod.getUri();
             const connectionDb = await mongoose.connect(memUri);

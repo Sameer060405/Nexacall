@@ -6,6 +6,8 @@ import {
   updateMeeting,
   deleteMeeting,
   getMeetingMetrics,
+  getMeetingByCode,
+  verifyMeetingJoin,
 } from '../controllers/meeting.controller.js';
 import authMiddleware from '../middleware/auth.middleware.js';
 
@@ -22,6 +24,10 @@ router.use((req, res, next) => {
 router.get('/test', (req, res) => {
     res.json({ message: 'Meeting routes are working!' });
 });
+
+// Public endpoints for joining (no auth)
+router.get('/by-code/:code', getMeetingByCode);
+router.post('/verify-join', verifyMeetingJoin);
 
 router.post('/', authMiddleware, createMeeting);
 router.get('/', authMiddleware, getMeetings);

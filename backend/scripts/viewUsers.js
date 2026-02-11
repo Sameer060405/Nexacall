@@ -12,8 +12,7 @@ async function viewUsers() {
     try {
         // Connect to MongoDB using the same logic as app.js
         const isProd = process.env.NODE_ENV === 'production';
-        const localUri = process.env.MONGODB_URI_LOCAL || 'mongodb://127.0.0.1:27017/livelink_dev';
-        const uri = isProd ? process.env.MONGODB_URI : localUri;
+        const uri = process.env.MONGODB_URI || (isProd ? null : (process.env.MONGODB_URI_LOCAL || 'mongodb://127.0.0.1:27017/livelink_dev'));
         
         console.log('Connecting to database...');
         

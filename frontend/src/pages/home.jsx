@@ -10,14 +10,17 @@ import InvitationsList from '../components/InvitationsList';
 import Insights from '../components/Insights';
 import meetingService from '../services/meeting.service';
 import invitationService from '../services/invitation.service';
+import { useToast } from '../contexts/ToastContext';
 
 function HomeComponent() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [meetings, setMeetings] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [metrics, setMetrics] = useState({});
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [createdMeetingSuccess, setCreatedMeetingSuccess] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -92,46 +95,66 @@ function HomeComponent() {
 
   const handleScheduleMeeting = async (meetingData) => {
     try {
-      console.log('Scheduling meeting with data:', meetingData);
       const result = await meetingService.createMeeting(meetingData);
-      console.log('Meeting creation result:', result);
       if (result.success) {
-        // Reload dashboard data to show the new meeting
         await loadDashboardData();
-        // Show success message
-        alert('Meeting scheduled successfully!');
+        setCreatedMeetingSuccess(result.meeting);
       } else {
-        console.error('Meeting creation failed:', result.error);
-        const errorMsg = result.error.includes('404') 
+        const errorMsg = result.error?.includes('404')
           ? 'Backend server not responding. Please ensure the backend is running on port 8000.'
           : result.error;
-        alert(`Failed to schedule meeting: ${errorMsg}`);
+        toast.error(`Failed to schedule meeting: ${errorMsg}`);
       }
     } catch (error) {
       console.error('Error scheduling meeting:', error);
       const errorMsg = error.message?.includes('404') || error.message?.includes('Network Error')
         ? 'Cannot connect to backend server. Please ensure the backend is running on port 8000.'
         : error.message || 'Please try again.';
-      alert(`Failed to schedule meeting: ${errorMsg}`);
+      toast.error(`Failed to schedule meeting: ${errorMsg}`);
+    }
+  };
+
+  const handleDeleteMeeting = async (meeting) => {
+    if (!window.confirm(`Delete meeting "${meeting.title}"? This cannot be undone.`)) return;
+    try {
+      const result = await meetingService.deleteMeeting(meeting._id);
+      if (result.success) {
+        await loadDashboardData();
+        toast.success('Meeting deleted');
+      } else {
+        toast.error(`Failed to delete meeting: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      toast.error('Failed to delete meeting. Please try again.');
     }
   };
 
   const handleReschedule = (meeting) => {
-    // TODO: Implement reschedule functionality
-    alert(`Reschedule meeting: ${meeting.title}`);
+    toast.info(`Reschedule coming soon: ${meeting.title}`);
   };
 
   const handleChangeAttendance = (meeting) => {
-    // TODO: Implement change attendance functionality
-    alert(`Change attendance for: ${meeting.title}`);
+    toast.info(`Change attendance coming soon: ${meeting.title}`);
   };
 
   const handleConnect = (meeting) => {
-    // Navigate to the meeting using the meeting code
     if (meeting.meetingCode) {
       navigate(`/${meeting.meetingCode}`);
     } else {
-      alert('Meeting code not found');
+      toast.error('Meeting code not found');
+    }
+  };
+
+  const getMeetingJoinLink = (code) => {
+    if (typeof window === 'undefined' || !code) return '';
+    return `${window.location.origin}/${code}`;
+  };
+
+  const copyMeetingLink = (code) => {
+    const link = getMeetingJoinLink(code);
+    if (link && navigator.clipboard) {
+      navigator.clipboard.writeText(link).then(() => toast.success('Link copied to clipboard'));
     }
   };
 
@@ -139,14 +162,14 @@ function HomeComponent() {
     try {
       const result = await invitationService.respondToInvitation(invitation.id, 'accepted');
       if (result.success) {
-        // Reload invitations
         await loadDashboardData();
+        toast.success('Invitation accepted');
       } else {
-        alert(`Failed to RSVP: ${result.error}`);
+        toast.error(`Failed to RSVP: ${result.error}`);
       }
     } catch (error) {
       console.error('Error responding to invitation:', error);
-      alert('Failed to RSVP. Please try again.');
+      toast.error('Failed to RSVP. Please try again.');
     }
   };
 
@@ -189,6 +212,9 @@ function HomeComponent() {
                 onReschedule={handleReschedule}
                 onChangeAttendance={handleChangeAttendance}
                 onConnect={handleConnect}
+                onDelete={handleDeleteMeeting}
+                getMeetingJoinLink={getMeetingJoinLink}
+                onCopyLink={copyMeetingLink}
               />
             </div>
 
@@ -208,6 +234,42 @@ function HomeComponent() {
           </div>
         </div>
       </div>
+
+      {/* Meeting created success modal: link + join code */}
+      {createdMeetingSuccess && createdMeetingSuccess.meetingCode && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Meeting created</h3>
+            <p className="text-sm text-gray-600 mb-4">Share the link or joining code with participants. If you set a password, they will be asked for it when they join.</p>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Joining code</label>
+                <p className="font-mono text-lg font-semibold text-gray-800">{createdMeetingSuccess.meetingCode}</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Meeting link</label>
+                <p className="text-sm text-gray-700 break-all">{getMeetingJoinLink(createdMeetingSuccess.meetingCode)}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => copyMeetingLink(createdMeetingSuccess.meetingCode)}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              >
+                Copy link
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreatedMeetingSuccess(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

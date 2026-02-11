@@ -127,6 +127,41 @@ class MeetingService {
       };
     }
   }
+
+  /** Public: get meeting by code (no auth required). Returns { exists, requiresPassword, title }. */
+  async getMeetingByCode(code) {
+    try {
+      const response = await this.client.get(`/by-code/${encodeURIComponent(code)}`);
+      return {
+        success: true,
+        exists: response.data.exists,
+        requiresPassword: response.data.requiresPassword,
+        title: response.data.title,
+        meetingCode: response.data.meetingCode,
+      };
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return { success: true, exists: false };
+      }
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to fetch meeting',
+      };
+    }
+  }
+
+  /** Public: verify meeting code + password (no auth required). */
+  async verifyMeetingJoin(meetingCode, password) {
+    try {
+      const response = await this.client.post('/verify-join', { meetingCode, password });
+      return { success: response.data.success === true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Incorrect password',
+      };
+    }
+  }
 }
 
 export default new MeetingService();

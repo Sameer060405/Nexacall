@@ -1,7 +1,7 @@
 import React from 'react';
 import MeetingCard from './MeetingCard';
 
-const AgendaList = ({ meetings = [], onReschedule, onChangeAttendance, onConnect }) => {
+const AgendaList = ({ meetings = [], onReschedule, onChangeAttendance, onConnect, onDelete, getMeetingJoinLink, onCopyLink }) => {
   if (meetings.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -22,6 +22,9 @@ const AgendaList = ({ meetings = [], onReschedule, onChangeAttendance, onConnect
             onReschedule={onReschedule}
             onChangeAttendance={onChangeAttendance}
             onConnect={onConnect}
+            onDelete={onDelete}
+            getMeetingJoinLink={getMeetingJoinLink}
+            onCopyLink={onCopyLink}
           />
         ))}
       </div>

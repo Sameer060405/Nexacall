@@ -205,6 +205,70 @@ export const deleteMeeting = async (req, res) => {
   }
 };
 
+/** Public: get meeting info by code (no auth). Used to check if meeting exists and if it requires a password. */
+export const getMeetingByCode = async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (!code || !code.trim()) {
+      return sendError(res, 400, 'Meeting code is required');
+    }
+    const meeting = await ScheduledMeeting.findOne({
+      meetingCode: code.trim(),
+      status: { $ne: 'cancelled' },
+    }).select('meetingCode title password').lean();
+
+    if (!meeting) {
+      return res.status(404).json({ exists: false });
+    }
+
+    res.json({
+      exists: true,
+      meetingCode: meeting.meetingCode,
+      title: meeting.title,
+      requiresPassword: !!(meeting.password && meeting.password.length > 0),
+    });
+  } catch (error) {
+    console.error('Get meeting by code error:', error);
+    sendError(res, 500, 'Internal server error');
+  }
+};
+
+/** Public: verify meeting code + password (no auth). */
+export const verifyMeetingJoin = async (req, res) => {
+  try {
+    const { meetingCode, password } = req.body;
+    if (!meetingCode || !meetingCode.trim()) {
+      return sendError(res, 400, 'Meeting code is required');
+    }
+
+    const meeting = await ScheduledMeeting.findOne({
+      meetingCode: meetingCode.trim(),
+      status: { $ne: 'cancelled' },
+    }).select('password');
+
+    if (!meeting) {
+      return res.status(404).json({ success: false, error: 'Meeting not found' });
+    }
+
+    if (!meeting.password || meeting.password.length === 0) {
+      return res.json({ success: true });
+    }
+
+    if (!password || typeof password !== 'string') {
+      return res.status(401).json({ success: false, error: 'Password is required' });
+    }
+
+    if (meeting.password.trim() !== password.trim()) {
+      return res.status(401).json({ success: false, error: 'Incorrect password' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Verify meeting join error:', error);
+    sendError(res, 500, 'Internal server error');
+  }
+};
+
 export const getMeetingMetrics = async (req, res) => {
   try {
     const userId = req.user.id;
