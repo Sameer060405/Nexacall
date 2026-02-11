@@ -96,15 +96,15 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.login(username, password);
       
       if (result.success) {
-        // Set user state first, then navigate after state update
         setUser(result.user);
-        // Use setTimeout to ensure state is updated before navigation
-        setTimeout(() => {
-          navigate('/home');
-        }, 0);
+        setTimeout(() => navigate('/home'), 0);
         return { success: true };
       } else {
-        throw new Error(result.error);
+        const msg = result.error || 'Login failed';
+        if (msg.toLowerCase().includes('invalid credentials')) {
+          throw new Error('Invalid username or password. No account found — try Sign Up if this is your first time or after a server restart.');
+        }
+        throw new Error(msg);
       }
     } catch (error) {
       setError(error.message);

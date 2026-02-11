@@ -118,19 +118,40 @@ export const getMeetings = async (req, res) => {
 export const getTodaysMeetings = async (req, res) => {
   try {
     const userId = req.user.id;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const hostIdQuery = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : userId;
+    let todayStart;
+    let todayEnd;
+    const startParam = req.query.start;
+    const endParam = req.query.end;
+    if (startParam && endParam) {
+      todayStart = new Date(startParam);
+      todayEnd = new Date(endParam);
+      if (isNaN(todayStart.getTime()) || isNaN(todayEnd.getTime()) || todayEnd <= todayStart) {
+        todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        todayEnd = new Date(todayStart);
+        todayEnd.setDate(todayEnd.getDate() + 1);
+      }
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      todayStart = today;
+      todayEnd = new Date(today);
+      todayEnd.setDate(todayEnd.getDate() + 1);
+    }
+
+    // Widen window by 24h each side so timezone differences never exclude "today" meetings
+    const windowStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
+    const windowEnd = new Date(todayEnd.getTime() + 24 * 60 * 60 * 1000);
 
     const meetings = await ScheduledMeeting.find({
       $or: [
-        { hostId: userId },
-        { 'participants.userId': userId },
+        { hostId: hostIdQuery },
+        { 'participants.userId': hostIdQuery },
       ],
       startTime: {
-        $gte: today,
-        $lt: tomorrow,
+        $gte: windowStart,
+        $lt: windowEnd,
       },
       status: { $ne: 'cancelled' },
     })

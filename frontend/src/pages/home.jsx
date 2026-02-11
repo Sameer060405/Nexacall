@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import withAuth from '../utils/withAuth';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -21,30 +21,43 @@ function HomeComponent() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [createdMeetingSuccess, setCreatedMeetingSuccess] = useState(null);
+  const lastCreatedMeetingRef = useRef(null);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (showLoading = true) => {
     try {
-      setLoading(true);
-      
-      // Load today's meetings
+      if (showLoading) setLoading(true);
+
       const todayMeetings = await loadTodaysMeetings();
       setMeetings(todayMeetings);
 
-      // Load invitations
+      const toMerge = lastCreatedMeetingRef.current;
+      if (toMerge && (toMerge._id || toMerge.id)) {
+        const id = toMerge._id || toMerge.id;
+        const inApi = todayMeetings.some((m) => (m._id || m.id) === id);
+        if (inApi) {
+          lastCreatedMeetingRef.current = null;
+        } else {
+          setMeetings((prev) => {
+            const exists = prev.some((m) => (m._id || m.id) === id);
+            if (exists) return prev;
+            return [...prev, toMerge].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+          });
+        }
+      }
+
       const pendingInvitations = await loadInvitations();
       setInvitations(pendingInvitations);
 
-      // Load metrics
       const dashboardMetrics = await loadMetrics();
       setMetrics(dashboardMetrics);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
@@ -52,8 +65,14 @@ function HomeComponent() {
     try {
       const result = await meetingService.getTodaysMeetings();
       if (result.success) {
-        // Ensure meetings are sorted by start time
-        return result.meetings.sort((a, b) => {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const endOfToday = new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000);
+        const todayOnly = result.meetings.filter((m) => {
+          const t = new Date(m.startTime).getTime();
+          return t >= startOfToday.getTime() && t < endOfToday.getTime();
+        });
+        return todayOnly.sort((a, b) => {
           const dateA = new Date(a.startTime);
           const dateB = new Date(b.startTime);
           return dateA - dateB;
@@ -97,8 +116,27 @@ function HomeComponent() {
     try {
       const result = await meetingService.createMeeting(meetingData);
       if (result.success) {
+        const newMeeting = result.meeting;
+        if (!newMeeting || (!newMeeting._id && !newMeeting.id)) {
+          await loadDashboardData();
+          setCreatedMeetingSuccess(newMeeting || { meetingCode: 'Created' });
+          return;
+        }
+        lastCreatedMeetingRef.current = newMeeting;
+        setMeetings((prev) => {
+          const id = newMeeting._id || newMeeting.id;
+          const exists = prev.some((m) => (m._id || m.id) === id);
+          const next = exists ? prev : [...prev, newMeeting];
+          return next.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        });
         await loadDashboardData();
-        setCreatedMeetingSuccess(result.meeting);
+        setMeetings((prev) => {
+          const id = newMeeting._id || newMeeting.id;
+          const exists = prev.some((m) => (m._id || m.id) === id);
+          if (exists) return prev;
+          return [...prev, newMeeting].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        });
+        setCreatedMeetingSuccess(newMeeting);
       } else {
         const errorMsg = result.error?.includes('404')
           ? 'Backend server not responding. Please ensure the backend is running on port 8000.'
@@ -261,7 +299,10 @@ function HomeComponent() {
               </button>
               <button
                 type="button"
-                onClick={() => setCreatedMeetingSuccess(null)}
+                onClick={() => {
+                  setCreatedMeetingSuccess(null);
+                  loadDashboardData(false);
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
               >
                 Done

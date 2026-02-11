@@ -6,11 +6,12 @@ import {
     VideoCameraSlashIcon,
     PhoneXMarkIcon,
     MicrophoneIcon,
-    NoSymbolIcon,           // <-- use this for “mic off”
+    NoSymbolIcon,
     ComputerDesktopIcon,
     ChatBubbleLeftRightIcon,
-    StopCircleIcon
-} from '@heroicons/react/24/solid'; // Import Heroicons
+    StopCircleIcon,
+} from '@heroicons/react/24/solid';
+import { FaceSmileIcon } from '@heroicons/react/24/outline'; // Import Heroicons
 import server from '../environment';
 import meetingService from '../services/meeting.service';
 import Chat from './Chat';
@@ -74,9 +75,14 @@ export default function VideoMeetComponent() {
     const [joinPassword, setJoinPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
 
-    const videoRef = useRef([])
+    const videoRef = useRef([]);
+    const [videos, setVideos] = useState([]);
+    const [participantNames, setParticipantNames] = useState({});
+    const [notifications, setNotifications] = useState([]);
+    const [stickers, setStickers] = useState([]);
+    const [showStickerPicker, setShowStickerPicker] = useState(false);
 
-    let [videos, setVideos] = useState([])
+    const STICKERS = ['👍', '👏', '❤️', '😂', '😮', '🔥', '🎉', '👋'];
 
 
 
@@ -313,16 +319,28 @@ export default function VideoMeetComponent() {
         socketRef.current.on('signal', gotMessageFromServer)
 
         socketRef.current.on('connect', () => {
-            socketRef.current.emit('join-call', window.location.href)
-            socketIdRef.current = socketRef.current.id
+            socketRef.current.emit('join-call', window.location.href, username);
+            socketIdRef.current = socketRef.current.id;
 
-            socketRef.current.on('chat-message', addMessage)
+            socketRef.current.on('chat-message', addMessage);
 
-            socketRef.current.on('user-left', (id) => {
-                setVideos((videos) => videos.filter((video) => video.socketId !== id))
-            })
+            socketRef.current.on('user-left', (id, leftName) => {
+                setVideos((v) => v.filter((video) => video.socketId !== id));
+                setParticipantNames((p) => {
+                    const next = { ...p };
+                    delete next[id];
+                    return next;
+                });
+                setNotifications((n) => [...n.slice(-4), { id: Date.now(), msg: `${leftName || 'Someone'} left the meeting`, type: 'leave' }]);
+            });
 
-            socketRef.current.on('user-joined', (id, clients) => {
+            socketRef.current.on('user-joined', (id, clients, joinedName) => {
+                if (joinedName) {
+                    setParticipantNames((p) => ({ ...p, [id]: joinedName }));
+                    if (id !== socketIdRef.current) {
+                        setNotifications((n) => [...n.slice(-4), { id: Date.now(), msg: `${joinedName} joined the meeting`, type: 'join' }]);
+                    }
+                }
                 clients.forEach((socketListId) => {
 
                     connections[socketListId] = new RTCPeerConnection(peerConfigConnections)
@@ -397,8 +415,16 @@ export default function VideoMeetComponent() {
                         })
                     }
                 }
-            })
-        })
+            });
+
+            socketRef.current.on('sticker', (fromId, fromName, stickerId) => {
+                const sid = Date.now() + Math.random();
+                setStickers((s) => [...s.slice(-8), { id: sid, fromName, stickerId }]);
+                setTimeout(() => {
+                    setStickers((prev) => prev.filter((x) => x.id !== sid));
+                }, 3000);
+            });
+        });
     }
 
     let silence = () => {
@@ -453,10 +479,20 @@ export default function VideoMeetComponent() {
     };
 
     let sendMessage = () => {
-        console.log(socketRef.current);
-        socketRef.current.emit('chat-message', message, username)
-        setMessage("");
-    }
+        if (!message.trim()) return;
+        socketRef.current.emit('chat-message', message.trim(), username);
+        setMessage('');
+    };
+
+    const sendSticker = (stickerId) => {
+        if (socketRef.current) {
+            socketRef.current.emit('sticker', stickerId);
+            setShowStickerPicker(false);
+            const sid = Date.now() + Math.random();
+            setStickers((s) => [...s.slice(-8), { id: sid, fromName: username, stickerId }]);
+            setTimeout(() => setStickers((prev) => prev.filter((x) => x.id !== sid)), 3000);
+        }
+    };
 
     let connect = (overrides) => {
         setAskForUsername(false);
@@ -519,95 +555,184 @@ export default function VideoMeetComponent() {
                     audioAvailable={audioAvailable}
                 />
             ) : showCall ? (
-                <div className="flex flex-1 relative"> {/* Main content area: video grid + chat */}
-                    {/* Video Grid will go here */}
-                    <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Local Video */}
-                        <div className="relative w-full h-full bg-gray-800 rounded-lg overflow-hidden">
+                <div className="flex flex-1 flex-col relative bg-[#0f0f1a] min-h-0">
+                    {/* Top bar - meeting info */}
+                    <header className="flex items-center justify-between px-4 py-2 bg-black/30 border-b border-white/10 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-white">
+                                {meetingCode ? `Meeting: ${meetingCode}` : 'In call'}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                                {videos.length + 1} participant{videos.length !== 0 ? 's' : ''}
+                            </span>
+                        </div>
+                    </header>
+
+                    {/* Notifications - Zoom/Teams style */}
+                    <div className="absolute top-14 left-4 z-40 flex flex-col gap-1.5 max-w-xs pointer-events-none">
+                        {notifications.slice(-5).map((n) => (
+                            <div
+                                key={n.id}
+                                className={`px-3 py-2 rounded-lg text-sm shadow-lg ${
+                                    n.type === 'join' ? 'bg-emerald-600/90 text-white' : 'bg-gray-700/90 text-gray-200'
+                                }`}
+                            >
+                                {n.msg}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Sticker overlay - reactions on screen (Zoom/Teams style) */}
+                    <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+                        {stickers.map((st, i) => {
+                            const offsetX = (i % 3 - 1) * 80;
+                            const offsetY = (Math.floor(i / 3) % 2) * 60 - 30;
+                            return (
+                                <div
+                                    key={st.id}
+                                    className="absolute animate-bounce"
+                                    style={{
+                                        top: '35%',
+                                        left: '50%',
+                                        transform: `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`,
+                                    }}
+                                >
+                                    <span className="text-5xl sm:text-6xl drop-shadow-lg" role="img" aria-label="reaction">
+                                        {st.stickerId}
+                                    </span>
+                                    <p className="text-center text-xs text-white drop-shadow mt-0.5 truncate max-w-[80px]">
+                                        {st.fromName}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Video grid - visible boxes like Zoom/Teams */}
+                    <div className="flex-1 p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 min-h-0 overflow-auto">
+                        {/* Local video tile */}
+                        <div className="relative rounded-xl overflow-hidden bg-gray-900 border-2 border-white/20 shadow-xl min-h-[180px] flex flex-col">
                             <video
-                                className="w-full h-full object-cover"
+                                className="w-full h-full min-h-[160px] object-cover"
                                 ref={localVideoref}
                                 autoPlay
                                 muted
-                            ></video>
-                            <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs">
-                                You
+                                playsInline
+                            />
+                            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                                <span className="px-2 py-1 rounded-md bg-black/60 text-xs font-medium text-white">
+                                    You {!video && '(camera off)'}
+                                </span>
+                                {!audio && (
+                                    <span className="px-2 py-0.5 rounded bg-red-500/80 text-xs text-white">Muted</span>
+                                )}
                             </div>
                         </div>
 
-                        {/* Remote Videos */}
-                        {videos.map((vid, index) => (
-                            <div key={vid.socketId} className="relative w-full h-full bg-gray-800 rounded-lg overflow-hidden">
-                                <Video
-                                    stream={vid.stream} // Pass the stream directly
-                                />
-                                <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 px-2 py-1 rounded-md text-xs">
-                                    User {index + 1} {/* Placeholder for username */}
+                        {/* Remote video tiles */}
+                        {videos.map((vid) => (
+                            <div
+                                key={vid.socketId}
+                                className="relative rounded-xl overflow-hidden bg-gray-900 border-2 border-white/20 shadow-xl min-h-[180px] flex flex-col"
+                            >
+                                <Video stream={vid.stream} />
+                                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                                    <span className="px-2 py-1 rounded-md bg-black/60 text-xs font-medium text-white">
+                                        {participantNames[vid.socketId] || `Participant`}
+                                    </span>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-
-                    {/* Controls Bar */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-gray-800 bg-opacity-75 p-4 flex justify-center space-x-4">
+                    {/* Controls bar - Teams/Zoom style */}
+                    <div className="shrink-0 flex items-center justify-center gap-2 py-4 px-4 bg-black/40 border-t border-white/10">
                         <button
                             onClick={handleVideo}
-                            className="btn btn-circle btn-ghost text-white"
+                            className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 text-white transition-colors"
+                            title={video ? 'Turn off camera' : 'Turn on camera'}
                         >
-                            {video === true ? <VideoCameraIcon className="h-6 w-6" /> : <VideoCameraSlashIcon className="h-6 w-6" />}
-                        </button>
-                        <button
-                            onClick={handleEndCall}
-                            className="btn btn-circle btn-error text-white"
-                        >
-                            <PhoneXMarkIcon className="h-6 w-6" />
+                            {video ? <VideoCameraIcon className="w-6 h-6" /> : <VideoCameraSlashIcon className="w-6 h-6" />}
                         </button>
                         <button
                             onClick={handleAudio}
-                            className="btn btn-circle btn-ghost text-white"
+                            className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 text-white transition-colors"
+                            title={audio ? 'Mute' : 'Unmute'}
                         >
-                            {audio === true
-                                ? <MicrophoneIcon className="h-6 w-6" />
-                                : <NoSymbolIcon className="h-6 w-6" />}   {/* mic muted */}
-
-
+                            {audio ? <MicrophoneIcon className="w-6 h-6" /> : <NoSymbolIcon className="w-6 h-6" />}
                         </button>
-
-                        {screenAvailable === true && (
+                        {screenAvailable && (
                             <button
                                 onClick={handleScreen}
-                                className="btn btn-circle btn-ghost text-white"
+                                className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 text-white transition-colors"
+                                title={screen ? 'Stop share' : 'Share screen'}
                             >
-                                {screen === true ? <StopCircleIcon className="h-6 w-6" /> : <ComputerDesktopIcon className="h-6 w-6" />}
+                                {screen ? <StopCircleIcon className="w-6 h-6" /> : <ComputerDesktopIcon className="w-6 h-6" />}
                             </button>
                         )}
 
-                        <div className="indicator">
-                            {newMessages > 0 && (
-                                <span className="indicator-item badge badge-secondary">{newMessages}</span>
-                            )}
+                        {/* Reactions / Stickers */}
+                        <div className="relative">
                             <button
-                                onClick={() => setModal(!showModal)}
-                                className="btn btn-circle btn-ghost text-white"
+                                onClick={() => setShowStickerPicker((v) => !v)}
+                                className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 text-white transition-colors"
+                                title="Send a reaction"
                             >
-                                <ChatBubbleLeftRightIcon className="h-6 w-6" />
+                                <FaceSmileIcon className="w-6 h-6" />
+                            </button>
+                            {showStickerPicker && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-2 rounded-xl bg-gray-800 border border-white/20 shadow-xl flex flex-wrap gap-1 w-48 justify-center">
+                                    {STICKERS.map((st) => (
+                                        <button
+                                            key={st}
+                                            type="button"
+                                            onClick={() => sendSticker(st)}
+                                            className="w-9 h-9 flex items-center justify-center text-2xl hover:bg-white/20 rounded-lg transition-colors"
+                                        >
+                                            {st}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="relative">
+                            <button
+                                onClick={() => { setModal(!showModal); setNewMessages(0); }}
+                                className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-white/15 hover:bg-white/25 text-white transition-colors relative"
+                                title="Chat"
+                            >
+                                <ChatBubbleLeftRightIcon className="w-6 h-6" />
+                                {newMessages > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-xs flex items-center justify-center">
+                                        {newMessages > 9 ? '9+' : newMessages}
+                                    </span>
+                                )}
                             </button>
                         </div>
+
+                        <button
+                            onClick={handleEndCall}
+                            className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-red-600 hover:bg-red-500 text-white transition-colors"
+                            title="Leave call"
+                        >
+                            <PhoneXMarkIcon className="w-6 h-6" />
+                        </button>
                     </div>
 
-                    {/* Chat Sidebar */}
+                    {/* Chat sidebar */}
                     <motion.div
                         initial={{ x: '100%' }}
-                        animate={{ x: showModal ? '0%' : '100%' }}
+                        animate={{ x: showModal ? 0 : '100%' }}
                         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="absolute top-0 right-0 h-full bg-gray-800 w-80 shadow-lg z-50 flex flex-col"
+                        className="absolute top-0 right-0 h-full w-80 sm:w-96 bg-[#1a1a2e] shadow-2xl z-50 flex flex-col border-l border-white/10"
                     >
                         <Chat
                             messages={messages}
                             message={message}
                             setMessage={setMessage}
                             sendMessage={sendMessage}
+                            currentUsername={username}
                         />
                     </motion.div>
                 </div>

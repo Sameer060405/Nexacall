@@ -73,7 +73,16 @@ class MeetingService {
 
   async getTodaysMeetings() {
     try {
-      const response = await this.client.get('/today');
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      const endOfToday = new Date(startOfToday);
+      endOfToday.setDate(endOfToday.getDate() + 1);
+      const response = await this.client.get('/today', {
+        params: {
+          start: startOfToday.toISOString(),
+          end: endOfToday.toISOString(),
+        },
+      });
       return {
         success: true,
         meetings: response.data.meetings,

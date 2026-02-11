@@ -4,6 +4,7 @@ import { Server } from "socket.io"
 let connections = {}
 let messages = {}
 let timeOnline = {}
+let socketToUsername = {}
 
 export const connectToSocket = (server) => {
     const io = new Server(server, {
@@ -20,28 +21,26 @@ export const connectToSocket = (server) => {
 
         console.log("SOMETHING CONNECTED")
 
-        socket.on("join-call", (path) => {
+        socket.on("join-call", (path, username) => {
+            const displayName = username && typeof username === 'string' ? username.trim() || 'Guest' : 'Guest';
+            socketToUsername[socket.id] = displayName;
 
             if (connections[path] === undefined) {
                 connections[path] = []
             }
-            connections[path].push(socket.id)
-
+            connections[path].push(socket.id);
             timeOnline[socket.id] = new Date();
 
-            
-
             for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path])
+                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path], displayName);
             }
 
             if (messages[path] !== undefined) {
                 for (let a = 0; a < messages[path].length; ++a) {
                     io.to(socket.id).emit("chat-message", messages[path][a]['data'],
-                        messages[path][a]['sender'], messages[path][a]['socket-id-sender'])
+                        messages[path][a]['sender'], messages[path][a]['socket-id-sender']);
                 }
             }
-
         })
 
         socket.on("signal", (toId, message) => {
@@ -76,6 +75,17 @@ export const connectToSocket = (server) => {
                 }
                 });
 
+        socket.on("sticker", (stickerId) => {
+            const displayName = socketToUsername[socket.id] || 'Guest';
+            const foundEntry = Object.entries(connections)
+                .find(([_, roomValue]) => roomValue.includes(socket.id));
+            if (foundEntry) {
+                const [, roomValue] = foundEntry;
+                roomValue.forEach((sid) => {
+                    io.to(sid).emit("sticker", socket.id, displayName, stickerId);
+                });
+            }
+        });
 
         socket.on("disconnect", () => {
 
@@ -89,9 +99,11 @@ export const connectToSocket = (server) => {
                     if (v[a] === socket.id) {
                         key = k
 
+                        const leftUsername = socketToUsername[socket.id] || 'Someone';
                         for (let a = 0; a < connections[key].length; ++a) {
-                            io.to(connections[key][a]).emit('user-left', socket.id)
+                            io.to(connections[key][a]).emit('user-left', socket.id, leftUsername)
                         }
+                        delete socketToUsername[socket.id];
 
                         var index = connections[key].indexOf(socket.id)
 
