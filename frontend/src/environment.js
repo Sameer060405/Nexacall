@@ -1,20 +1,21 @@
-// Backend / Socket.io server URL.
-// - If REACT_APP_API_URL is set, it is always used (good for ngrok or production).
-// - Otherwise in dev we use current host + port 8000 so localhost works.
+// App server base URL from environment variable
+const isProd = process.env.NODE_ENV === "production";
+
+// Hosted backend (used in production builds, e.g. on Vercel)
+const RENDER_BACKEND_URL = "https://nexacall-si3n.onrender.com";
+
 const getServerURL = () => {
-  const envUrl = process.env.REACT_APP_API_URL;
-  if (envUrl && envUrl.trim() !== "") {
-    return envUrl.replace(/\/$/, "");
+  if (isProd) {
+    return process.env.REACT_APP_API_URL || RENDER_BACKEND_URL;
   }
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname;
-    const port = 8000;
-    const protocol = window.location.protocol;
-    return `${protocol}//${host}:${port}`;
-  }
-  return "http://localhost:8000";
+
+  const host = window.location.hostname;
+  const port = 8000;
+  const protocol = window.location.protocol;
+
+  return `${protocol}//${host}:${port}`;
 };
 
 const server = getServerURL();
-if (typeof window !== "undefined") console.log("Backend URL:", server);
+console.log('Server URL:', server);
 export default server;

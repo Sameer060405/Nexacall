@@ -28,6 +28,33 @@ const peerConfigConnections = {
     ]
 }
 
+// Play a short "someone joined" chime (like Teams/Skype)
+function playJoinSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.55, ctx.currentTime + 0.02);
+        gain.gain.setValueAtTime(0.55, ctx.currentTime + 0.15);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+        gain.connect(ctx.destination);
+
+        const playTone = (freq, start, duration, type = 'triangle') => {
+            const osc = ctx.createOscillator();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, start);
+            osc.connect(gain);
+            osc.start(start);
+            osc.stop(start + duration);
+        };
+        // Two clear beeps: lower then higher
+        playTone(440, ctx.currentTime, 0.18);           // A4
+        playTone(554.37, ctx.currentTime + 0.22, 0.25); // C#5
+    } catch (_) {}
+}
+
 export default function VideoMeetComponent() {
 
     var socketRef = useRef();
@@ -60,7 +87,7 @@ export default function VideoMeetComponent() {
     let [username, setUsername] = useState("");
 
     // Meeting password gate (for scheduled meetings with password)
-    const [meetingCode, setMeetingCode] = useState(() => {
+    const [meetingCode] = useState(() => {
         const path = typeof window !== 'undefined' ? window.location.pathname : '';
         return path.startsWith('/meeting/') ? (path.split('/')[2] || '') : (path.slice(1).split('/')[0] || '');
     });
@@ -178,11 +205,8 @@ export default function VideoMeetComponent() {
     useEffect(() => {
         if (video !== undefined && audio !== undefined) {
             getUserMedia();
-
-
         }
-
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [video, audio])
     let getMedia = (overrideVideo, overrideAudio) => {
         const v = overrideVideo !== undefined ? overrideVideo : (video !== undefined ? video : videoAvailable);
@@ -372,6 +396,7 @@ export default function VideoMeetComponent() {
                 if (joinedName) {
                     setParticipantNames((p) => ({ ...p, [id]: joinedName }));
                     if (id !== socketIdRef.current) {
+                        playJoinSound();
                         setNotifications((n) => [...n.filter((x) => Date.now() - (x.at || 0) < 4000), { id: Date.now() + Math.random(), msg: `${joinedName} joined the meeting`, type: 'join', at: Date.now() }]);
                     }
                 }
@@ -506,6 +531,7 @@ export default function VideoMeetComponent() {
         if (screen !== undefined) {
             getDislayMedia();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [screen])
     let handleScreen = () => {
         setScreen(!screen);

@@ -3,7 +3,6 @@ import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import LandingPage from './pages/landing';
 import Authentication from './pages/authentication';
 import { AuthProvider } from './contexts/AuthContext';
-import { ToastProvider } from './contexts/ToastContext';
 import VideoMeetComponent from './pages/VideoMeet';
 import HomeComponent from './pages/home';
 import History from './pages/history';
@@ -19,7 +18,7 @@ function App() {
       <Router>
 
         <AuthProvider>
-          <ToastProvider>
+
 
           <Routes>
 
@@ -37,7 +36,6 @@ function App() {
             <Route path='/meeting/:code' element={<VideoMeetComponent />} />
             <Route path='/:url' element={<VideoMeetComponent />} />
           </Routes>
-          </ToastProvider>
         </AuthProvider>
 
       </Router>

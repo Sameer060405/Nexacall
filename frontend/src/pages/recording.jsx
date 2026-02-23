@@ -16,6 +16,7 @@ function RecordingPage() {
     return () => {
       if (playUrl) URL.revokeObjectURL(playUrl);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadRecordings = async () => {

@@ -173,5 +173,6 @@ class MeetingService {
   }
 }
 
-export default new MeetingService();
+const meetingService = new MeetingService();
+export default meetingService;
 

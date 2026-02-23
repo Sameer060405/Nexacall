@@ -60,8 +60,9 @@ export const getRecordingStreamBlob = async (recordingId) => {
   return res.data;
 };
 
-export default {
+const recordingService = {
   uploadRecording,
   getRecordings,
   getRecordingStreamBlob,
 };
+export default recordingService;

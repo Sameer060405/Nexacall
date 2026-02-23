@@ -86,5 +86,6 @@ class InvitationService {
   }
 }
 
-export default new InvitationService();
+const invitationService = new InvitationService();
+export default invitationService;
 
