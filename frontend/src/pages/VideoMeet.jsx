@@ -22,31 +22,8 @@ const server_url = server;
 
 var connections = {};
 
-// Build ICE configuration from env so we can add TURN for cross‑network calls
-const iceServers = [
-    { urls: 'stun:stun.l.google.com:19302' },
-];
-
-if (
-    process.env.REACT_APP_TURN_URL &&
-    process.env.REACT_APP_TURN_USERNAME &&
-    process.env.REACT_APP_TURN_CREDENTIAL
-) {
-    const urls = process.env.REACT_APP_TURN_URL
-        .split(',')
-        .map((u) => u.trim())
-        .filter(Boolean);
-
-    iceServers.push({
-        urls: urls.length === 1 ? urls[0] : urls,
-        username: process.env.REACT_APP_TURN_USERNAME,
-        credential: process.env.REACT_APP_TURN_CREDENTIAL,
-    });
-}
-
-const peerConfigConnections = {
-    iceServers,
-    iceTransportPolicy: process.env.REACT_APP_ICE_TRANSPORT_POLICY || 'all',
+const fallbackIceConfig = {
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
 };
 
 // Play a short "someone joined" chime (like Teams/Skype)
@@ -80,6 +57,7 @@ export default function VideoMeetComponent() {
 
     var socketRef = useRef();
     let socketIdRef = useRef();
+    const iceConfigRef = useRef(fallbackIceConfig);
 
     let localVideoref = useRef();
 
@@ -155,6 +133,22 @@ export default function VideoMeetComponent() {
 
     useEffect(() => {
         getPermissions();
+    }, []);
+
+    useEffect(() => {
+        const domain = process.env.REACT_APP_METERED_DOMAIN;
+        const apiKey = process.env.REACT_APP_METERED_API_KEY;
+        if (!domain || !apiKey) return;
+
+        fetch(`https://${domain}/api/v1/turn/credentials?apiKey=${apiKey}`)
+            .then((r) => r.json())
+            .then((iceServers) => {
+                if (Array.isArray(iceServers) && iceServers.length) {
+                    iceConfigRef.current = { iceServers };
+                    console.log('TURN credentials fetched:', iceServers.length, 'servers');
+                }
+            })
+            .catch((e) => console.warn('Could not fetch TURN credentials, using STUN-only fallback:', e));
     }, []);
 
     // Check if this meeting requires a password (scheduled meeting with password)
@@ -425,7 +419,7 @@ export default function VideoMeetComponent() {
                     if (socketListId === socketIdRef.current) return;
                     if (connections[socketListId]) return;
 
-                    connections[socketListId] = new RTCPeerConnection(peerConfigConnections)
+                    connections[socketListId] = new RTCPeerConnection(iceConfigRef.current)
                     console.log("ADDING CONNECTION FOR ", socketListId);
                     connections[socketListId].onicecandidate = function (event) {
                         if (event.candidate != null) {
