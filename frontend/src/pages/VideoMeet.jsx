@@ -22,11 +22,32 @@ const server_url = server;
 
 var connections = {};
 
-const peerConfigConnections = {
-    "iceServers": [
-        { "urls": "stun:stun.l.google.com:19302" }
-    ]
+// Build ICE configuration from env so we can add TURN for cross‑network calls
+const iceServers = [
+    { urls: 'stun:stun.l.google.com:19302' },
+];
+
+if (
+    process.env.REACT_APP_TURN_URL &&
+    process.env.REACT_APP_TURN_USERNAME &&
+    process.env.REACT_APP_TURN_CREDENTIAL
+) {
+    const urls = process.env.REACT_APP_TURN_URL
+        .split(',')
+        .map((u) => u.trim())
+        .filter(Boolean);
+
+    iceServers.push({
+        urls: urls.length === 1 ? urls[0] : urls,
+        username: process.env.REACT_APP_TURN_USERNAME,
+        credential: process.env.REACT_APP_TURN_CREDENTIAL,
+    });
 }
+
+const peerConfigConnections = {
+    iceServers,
+    iceTransportPolicy: process.env.REACT_APP_ICE_TRANSPORT_POLICY || 'all',
+};
 
 // Play a short "someone joined" chime (like Teams/Skype)
 function playJoinSound() {
