@@ -8,6 +8,9 @@ import authRoutes from "./routes/auth.routes.js";
 import meetingRoutes from "./routes/meeting.routes.js";
 import invitationRoutes from "./routes/invitation.routes.js";
 import recordingRoutes from "./routes/recording.routes.js";
+import usersRoutes from "./routes/users.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
 import 'dotenv/config';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -49,6 +52,9 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/meetings", meetingRoutes);
 app.use("/api/v1/invitations", invitationRoutes);
 app.use("/api/v1/recordings", recordingRoutes);
+app.use("/api/v1/users", usersRoutes);
+app.use("/api/v1/ai", aiRoutes);
+app.use("/api/v1/contacts", contactRoutes);
 
 // 404 handler for API routes
 app.use("/api/*", (req, res) => {
@@ -99,5 +105,20 @@ const start = async () => {
 }
 
 
+
+// ── Global crash guards ───────────────────────────────────────────────────────
+// Node.js 15+ exits the process on unhandled promise rejections by default.
+// These handlers keep the server alive and log the error instead of crashing,
+// which is critical because a server crash drops all active Socket.IO sessions.
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[Server] Unhandled Promise Rejection — server kept alive.');
+    console.error('Promise:', promise);
+    console.error('Reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('[Server] Uncaught Exception — server kept alive.');
+    console.error(err);
+});
 
 start();

@@ -1,6 +1,7 @@
 import ScheduledMeeting from '../models/scheduledMeeting.model.js';
-import User from '../models/user.model.js';
+import Invitation from '../models/invitation.model.js';
 import mongoose from 'mongoose';
+import { sendMeetingInvites } from '../services/sms.service.js';
 
 const sendError = (res, statusCode, message) => res.status(statusCode).json({ error: message });
 
@@ -10,15 +11,18 @@ export const createMeeting = async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Request user:', req.user);
     
-    const { 
-      title, 
-      description, 
-      startTime, 
-      endTime, 
-      participants, 
+    const {
+      title,
+      description,
+      startTime,
+      endTime,
+      participants,
+      inviteeIds,
+      phoneContacts,
       location,
       meetingCode,
       password,
+      confidential,
       hostVideo,
       participantVideo,
       audio,
@@ -48,21 +52,67 @@ export const createMeeting = async (req, res) => {
       return sendError(res, 400, 'Invalid user ID format');
     }
 
+    // Build participants: merge any provided with inviteeIds
+    const participantUserIds = new Set();
+    (participants || []).forEach(p => {
+      const id = p.userId || p;
+      if (id && mongoose.Types.ObjectId.isValid(id)) participantUserIds.add(id.toString());
+    });
+    (inviteeIds || []).forEach(id => {
+      if (id && mongoose.Types.ObjectId.isValid(id)) participantUserIds.add(id.toString());
+    });
+
+    const participantList = Array.from(participantUserIds).map(userId => ({
+      userId,
+      status: 'pending',
+    }));
+
     const meeting = new ScheduledMeeting({
       title,
       description: description || '',
       hostId: hostObjectId,
       startTime: new Date(startTime),
       endTime: new Date(endTime),
-      participants: participants || [],
+      participants: participantList,
       location: location || 'Online',
-      meetingCode: meetingCode && meetingCode.trim() !== '' ? meetingCode.trim() : undefined, // Will be auto-generated if not provided
+      meetingCode: meetingCode && meetingCode.trim() !== '' ? meetingCode.trim() : undefined,
       password: password && password.trim() !== '' ? password.trim() : undefined,
+      confidential: !!confidential,
       status: 'scheduled',
     });
 
     await meeting.save();
+
+    // Create Invitation records for each invitee (so they see it in their invitations)
+    const inviterId = hostObjectId.toString();
+    for (const inviteeId of (inviteeIds || [])) {
+      if (!inviteeId || !mongoose.Types.ObjectId.isValid(inviteeId)) continue;
+      if (inviteeId.toString?.() === inviterId || String(inviteeId) === inviterId) continue;
+      try {
+        const existing = await Invitation.findOne({ meetingId: meeting._id, inviteeId });
+        if (existing) continue;
+        const invitation = new Invitation({
+          meetingId: meeting._id,
+          inviterId: hostObjectId,
+          inviteeId,
+          message: '',
+        });
+        await invitation.save();
+      } catch (err) {
+        console.error('Failed to create invitation for', inviteeId, err);
+      }
+    }
+
     await meeting.populate('hostId', 'username email');
+    await meeting.populate('participants.userId', 'username email');
+
+    // Fire-and-forget: send SMS invitations to phone contacts (non-NexaCall users).
+    // Runs after response so the API call is never delayed by SMS latency.
+    if (Array.isArray(phoneContacts) && phoneContacts.length > 0) {
+      sendMeetingInvites(phoneContacts, meeting).catch((err) => {
+        console.error('[SMS] sendMeetingInvites failed:', err.message);
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -236,7 +286,7 @@ export const getMeetingByCode = async (req, res) => {
     const meeting = await ScheduledMeeting.findOne({
       meetingCode: code.trim(),
       status: { $ne: 'cancelled' },
-    }).select('meetingCode title password').lean();
+    }).select('meetingCode title password confidential').lean();
 
     if (!meeting) {
       return res.status(404).json({ exists: false });
@@ -247,6 +297,7 @@ export const getMeetingByCode = async (req, res) => {
       meetingCode: meeting.meetingCode,
       title: meeting.title,
       requiresPassword: !!(meeting.password && meeting.password.length > 0),
+      confidential: !!meeting.confidential,
     });
   } catch (error) {
     console.error('Get meeting by code error:', error);

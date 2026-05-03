@@ -1,7 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon, VideoCameraIcon } from '@heroicons/react/24/solid';
+import userService from '../services/user.service';
+import contactService from '../services/contact.service';
 
 const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
+  // ── NexaCall connections (app-level invitations) ─────────────────────────
+  const [contacts, setContacts] = useState([]);
+  const [inviteContacts, setInviteContacts] = useState(false);
+  const [selectedContactIds, setSelectedContactIds] = useState(new Set());
+  const [contactsLoading, setContactsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && inviteContacts) {
+      setContactsLoading(true);
+      userService.getContacts().then((res) => {
+        setContactsLoading(false);
+        if (res.success) setContacts(res.contacts);
+      });
+    }
+  }, [isOpen, inviteContacts]);
+
+  const toggleContact = (id) => {
+    setSelectedContactIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // ── Phone contacts (SMS invitations) ─────────────────────────────────────
+  const [phoneContacts, setPhoneContacts] = useState([]);
+  const [invitePhone, setInvitePhone] = useState(false);
+  const [selectedPhoneIds, setSelectedPhoneIds] = useState(new Set());
+  const [phoneLoading, setPhoneLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && invitePhone && phoneContacts.length === 0) {
+      setPhoneLoading(true);
+      contactService.getContacts().then((res) => {
+        setPhoneLoading(false);
+        if (res.success) setPhoneContacts(res.contacts);
+      });
+    }
+  }, [isOpen, invitePhone]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const togglePhoneContact = (id) => {
+    setSelectedPhoneIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllPhone = () => {
+    if (selectedPhoneIds.size === phoneContacts.length) {
+      setSelectedPhoneIds(new Set());
+    } else {
+      setSelectedPhoneIds(new Set(phoneContacts.map((c) => c._id)));
+    }
+  };
+
   const [formData, setFormData] = useState({
     topic: '',
     startDate: new Date().toISOString().split('T')[0],
@@ -14,6 +74,7 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
     personalMeetingId: '',
     requirePassword: true,
     password: '',
+    confidential: false,
     hostVideo: 'off',
     participantVideo: 'off',
     audio: 'both',
@@ -75,17 +136,25 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
       ? generateRandomCode() 
       : formData.personalMeetingId;
 
+    const selectedPhone = phoneContacts.filter((c) => selectedPhoneIds.has(c._id));
+
     const meetingData = {
       title: formData.topic || 'Scheduled Meeting',
       startTime: startDateTime.toISOString(),
       endTime: endDateTime.toISOString(),
       meetingCode: meetingCode,
       password: formData.requirePassword ? formData.password : undefined,
+      confidential: formData.confidential,
       hostVideo: formData.hostVideo === 'on',
       participantVideo: formData.participantVideo === 'on',
       audio: formData.audio,
       timeZone: formData.timeZone,
       recurring: formData.recurring,
+      inviteeIds: inviteContacts ? Array.from(selectedContactIds) : undefined,
+      // Phone contacts for SMS invitations (name + phone, not NexaCall users)
+      phoneContacts: invitePhone && selectedPhone.length > 0
+        ? selectedPhone.map((c) => ({ name: c.name, phone: c.phone }))
+        : undefined,
     };
 
     onSchedule(meetingData);
@@ -270,6 +339,27 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
           </div>
 
           <div>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Security</h4>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[#1a1a1a]">Confidential meeting</p>
+                <p className="text-xs text-[#5e6c84]">Participants must be logged in to join</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={formData.confidential}
+                onClick={() => handleChange('confidential', !formData.confidential)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0B5CFF] focus:ring-offset-2 ${formData.confidential ? 'bg-[#0B5CFF]' : 'bg-[#dfe1e6]'}`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.confidential ? 'translate-x-5' : 'translate-x-0'}`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div>
             <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Video</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -317,6 +407,121 @@ const ScheduleMeetingModal = ({ isOpen, onClose, onSchedule }) => {
                 <span className="text-sm text-[#1a1a1a]">Telephone and computer audio</span>
               </label>
             </div>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">Invite contacts</h4>
+            <label className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                checked={inviteContacts}
+                onChange={(e) => {
+                  setInviteContacts(e.target.checked);
+                  if (!e.target.checked) setSelectedContactIds(new Set());
+                }}
+                className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
+              />
+              <span className="text-sm text-[#1a1a1a]">Invite contacts to this meeting</span>
+            </label>
+            {inviteContacts && (
+              <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 max-h-40 overflow-y-auto">
+                {contactsLoading ? (
+                  <p className="text-xs text-[#5e6c84] py-2">Loading contacts...</p>
+                ) : contacts.length === 0 ? (
+                  <p className="text-xs text-[#5e6c84] py-2">No contacts. Add contacts from the Contacts page.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {contacts.map((c) => (
+                      <label key={c._id} className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-white/60 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedContactIds.has(c._id)}
+                          onChange={() => toggleContact(c._id)}
+                          className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
+                        />
+                        <div className="w-8 h-8 rounded-full bg-[#0B5CFF]/10 flex items-center justify-center text-xs font-bold text-[#0B5CFF]">
+                          {(c.username || '??').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-[#1a1a1a]">{c.username}</p>
+                          <p className="text-xs text-[#5e6c84]">{c.email}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {inviteContacts && selectedContactIds.size > 0 && (
+                  <p className="text-xs text-[#5e6c84] mt-2 pt-2 border-t border-[#e2e8f0]">
+                    {selectedContactIds.size} contact{selectedContactIds.size !== 1 ? 's' : ''} selected
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* SMS Invites — phone contacts */}
+          <div>
+            <h4 className="text-sm font-semibold text-[#1a1a1a] mb-3">SMS invitations</h4>
+            <label className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                checked={invitePhone}
+                onChange={(e) => {
+                  setInvitePhone(e.target.checked);
+                  if (!e.target.checked) setSelectedPhoneIds(new Set());
+                }}
+                className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
+              />
+              <span className="text-sm text-[#1a1a1a]">Send SMS to phone contacts</span>
+            </label>
+            {invitePhone && (
+              <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 max-h-48 overflow-y-auto">
+                {phoneLoading ? (
+                  <p className="text-xs text-[#5e6c84] py-2">Loading contacts...</p>
+                ) : phoneContacts.length === 0 ? (
+                  <p className="text-xs text-[#5e6c84] py-2">No phone contacts. Add them from the Contacts page.</p>
+                ) : (
+                  <>
+                    {/* Select All row */}
+                    <label className="flex items-center gap-3 py-1.5 px-2 mb-1 rounded hover:bg-white/60 cursor-pointer border-b border-[#e2e8f0]">
+                      <input
+                        type="checkbox"
+                        checked={selectedPhoneIds.size === phoneContacts.length && phoneContacts.length > 0}
+                        onChange={selectAllPhone}
+                        className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
+                      />
+                      <span className="text-sm font-medium text-[#1a1a1a]">Select all</span>
+                    </label>
+
+                    <div className="space-y-1">
+                      {phoneContacts.map((c) => (
+                        <label key={c._id} className="flex items-center gap-3 py-1.5 px-2 rounded hover:bg-white/60 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedPhoneIds.has(c._id)}
+                            onChange={() => togglePhoneContact(c._id)}
+                            className="w-4 h-4 text-[#0B5CFF] border-[#dfe1e6] rounded focus:ring-[#0B5CFF]"
+                          />
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-700 flex-shrink-0">
+                            {(c.name || '??').slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#1a1a1a] truncate">{c.name}</p>
+                            <p className="text-xs text-[#5e6c84] truncate">{c.phone}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+
+                    {selectedPhoneIds.size > 0 && (
+                      <p className="text-xs text-emerald-600 mt-2 pt-2 border-t border-[#e2e8f0]">
+                        SMS will be sent to {selectedPhoneIds.size} contact{selectedPhoneIds.size !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

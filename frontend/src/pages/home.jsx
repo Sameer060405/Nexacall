@@ -10,7 +10,9 @@ import InvitationsList from '../components/InvitationsList';
 import Insights from '../components/Insights';
 import meetingService from '../services/meeting.service';
 import invitationService from '../services/invitation.service';
+import userService from '../services/user.service';
 import { useToast } from '../contexts/ToastContext';
+import { PhoneIcon } from '@heroicons/react/24/solid';
 
 function HomeComponent() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ function HomeComponent() {
   const [loading, setLoading] = useState(true);
   const [createdMeetingSuccess, setCreatedMeetingSuccess] = useState(null);
   const lastCreatedMeetingRef = useRef(null);
+  const [speedDial, setSpeedDial] = useState([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -55,6 +58,11 @@ function HomeComponent() {
 
       const dashboardMetrics = await loadMetrics();
       setMetrics(dashboardMetrics);
+
+      try {
+        const sdRes = await userService.getSpeedDial();
+        if (sdRes.success) setSpeedDial(sdRes.speedDial);
+      } catch {}
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -203,6 +211,9 @@ function HomeComponent() {
       if (result.success) {
         await loadDashboardData();
         toast.success('Invitation accepted');
+        if (invitation.meetingCode) {
+          navigate(`/${invitation.meetingCode}`);
+        }
       } else {
         toast.error(`Failed to RSVP: ${result.error}`);
       }
@@ -240,6 +251,32 @@ function HomeComponent() {
             </div>
             <ActionCards onScheduleMeeting={handleScheduleMeeting} />
           </div>
+
+          {speedDial.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-[#5e6c84] uppercase tracking-wide mb-3">Speed Dial</h3>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {speedDial.map((c) => (
+                  <button
+                    key={c._id}
+                    onClick={() => {
+                      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                      navigate(`/${code}`);
+                    }}
+                    className="flex-shrink-0 flex flex-col items-center gap-2 w-20 py-3 px-2 bg-white rounded-xl border border-[#e2e8f0] hover:border-[#0B5CFF]/30 hover:shadow-sm transition-all group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-[#0B5CFF] flex items-center justify-center text-xs font-bold text-white relative">
+                      {(c.username || '??').slice(0, 2).toUpperCase()}
+                      <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#0B5CFF] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <PhoneIcon className="w-2.5 h-2.5 text-white" />
+                      </span>
+                    </div>
+                    <span className="text-xs text-[#1a1a1a] font-medium truncate w-full text-center">{c.username}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Agenda */}

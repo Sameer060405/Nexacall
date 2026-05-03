@@ -145,6 +145,7 @@ class MeetingService {
         success: true,
         exists: response.data.exists,
         requiresPassword: response.data.requiresPassword,
+        confidential: response.data.confidential,
         title: response.data.title,
         meetingCode: response.data.meetingCode,
       };

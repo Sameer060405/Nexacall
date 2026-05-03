@@ -80,13 +80,14 @@ export const getInvitations = async (req, res) => {
     // Format invitations for frontend
     const formattedInvitations = invitations.map(inv => ({
       id: inv._id,
-      inviterName: inv.inviterId.username,
-      meetingTitle: inv.meetingId.title,
-      meetingId: inv.meetingId._id,
+      inviterName: inv.inviterId?.username,
+      meetingTitle: inv.meetingId?.title,
+      meetingId: inv.meetingId?._id,
+      meetingCode: inv.meetingId?.meetingCode,
       status: inv.status,
       message: inv.message,
       createdAt: inv.createdAt,
-    }));
+    })).filter(inv => inv.meetingId); // exclude if meeting was deleted
 
     res.json({
       success: true,

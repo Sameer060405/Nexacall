@@ -33,8 +33,16 @@ export const connectToSocket = (server) => {
             }
             timeOnline[socket.id] = new Date();
 
+            // Build a name map of ALL participants in the room so new joiners
+            // can display names for participants who joined before them.
+            const roomNameMap = {};
+            connections[path].forEach((sid) => {
+                roomNameMap[sid] = socketToUsername[sid] || 'Guest';
+            });
+
             for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path], displayName);
+                // Send the full name map so every participant can hydrate participantNames state
+                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path], displayName, roomNameMap);
             }
 
             if (messages[path] !== undefined) {
@@ -89,6 +97,44 @@ export const connectToSocket = (server) => {
             }
         });
 
+        // ------------------------------------------------------------------
+        // Live transcription: a participant emits a finalized speech entry.
+        // Broadcast it to all room members (including the sender so their
+        // own transcript state stays in sync with the server fan-out).
+        // ------------------------------------------------------------------
+        socket.on("transcript-update", (entry) => {
+            const foundEntry = Object.entries(connections)
+                .find(([_, roomValue]) => roomValue.includes(socket.id));
+            if (!foundEntry) return;
+
+            const [, roomValue] = foundEntry;
+            const enriched = {
+                ...entry,
+                socketId: socket.id,
+                speaker: socketToUsername[socket.id] || entry.speaker || 'Guest',
+            };
+
+            roomValue.forEach((sid) => {
+                io.to(sid).emit("transcript-update", enriched);
+            });
+        });
+
+        // ------------------------------------------------------------------
+        // Active speaker detection: a participant reports whether they are
+        // currently speaking (based on local AudioContext volume analysis).
+        // Broadcast to all room members so UIs can highlight the speaker.
+        // ------------------------------------------------------------------
+        socket.on("active-speaker", (isSpeaking) => {
+            const foundEntry = Object.entries(connections)
+                .find(([_, roomValue]) => roomValue.includes(socket.id));
+            if (!foundEntry) return;
+
+            const [, roomValue] = foundEntry;
+            roomValue.forEach((sid) => {
+                io.to(sid).emit("active-speaker", socket.id, Boolean(isSpeaking));
+            });
+        });
+
         socket.on("media-state", (audio, video) => {
             const foundEntry = Object.entries(connections)
                 .find(([_, roomValue]) => roomValue.includes(socket.id));
@@ -101,37 +147,26 @@ export const connectToSocket = (server) => {
         });
 
         socket.on("disconnect", () => {
-
-            var diffTime = Math.abs(timeOnline[socket.id] - new Date())
-
-            var key
+            const leftUsername = socketToUsername[socket.id] || 'Someone';
+            delete socketToUsername[socket.id];
+            delete timeOnline[socket.id];
 
             for (const [k, v] of JSON.parse(JSON.stringify(Object.entries(connections)))) {
-
                 for (let a = 0; a < v.length; ++a) {
                     if (v[a] === socket.id) {
-                        key = k
+                        connections[k].forEach((sid) => {
+                            io.to(sid).emit('user-left', socket.id, leftUsername);
+                        });
 
-                        const leftUsername = socketToUsername[socket.id] || 'Someone';
-                        for (let a = 0; a < connections[key].length; ++a) {
-                            io.to(connections[key][a]).emit('user-left', socket.id, leftUsername)
-                        }
-                        delete socketToUsername[socket.id];
+                        const index = connections[k].indexOf(socket.id);
+                        connections[k].splice(index, 1);
 
-                        var index = connections[key].indexOf(socket.id)
-
-                        connections[key].splice(index, 1)
-
-
-                        if (connections[key].length === 0) {
-                            delete connections[key]
+                        if (connections[k].length === 0) {
+                            delete connections[k];
                         }
                     }
                 }
-
             }
-
-
         })
 
 

@@ -42,6 +42,10 @@ const ScheduledMeetingSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  confidential: {
+    type: Boolean,
+    default: false,
+  },
   status: {
     type: String,
     enum: ['scheduled', 'in-progress', 'completed', 'cancelled'],
