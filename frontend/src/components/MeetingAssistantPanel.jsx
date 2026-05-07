@@ -20,6 +20,21 @@ import {
 } from '@heroicons/react/24/solid';
 import * as aiService from '../services/ai.service';
 
+// Converts raw API/network errors into a clean user-facing message
+function friendlyError(err) {
+    const msg = (err.response?.data?.error || err.message || '').toLowerCase();
+    if (msg.includes('quota') || msg.includes('rate') || msg.includes('429') || msg.includes('exceed')) {
+        return 'AI is a bit busy right now. Wait a moment and try again.';
+    }
+    if (msg.includes('not found') || msg.includes('404') || msg.includes('route')) {
+        return 'AI assistant is temporarily unavailable. Try again shortly.';
+    }
+    if (msg.includes('network') || msg.includes('failed to fetch')) {
+        return 'Connection issue. Check your internet and try again.';
+    }
+    return 'Something went wrong. Please try again.';
+}
+
 // Priority badge colours
 const PRIORITY_COLORS = {
     high: 'bg-red-500/20 text-red-300 border border-red-500/30',
@@ -68,7 +83,7 @@ function QATab({ transcript }) {
         } catch (err) {
             setMessages((prev) => [
                 ...prev,
-                { role: 'assistant', text: `Error: ${err.response?.data?.error || err.message}` },
+                { role: 'assistant', text: friendlyError(err) },
             ]);
         } finally {
             setLoading(false);
@@ -148,7 +163,7 @@ function SummaryTab({ transcript }) {
             const res = await aiService.generateSummary(transcript);
             setData(res.data);
         } catch (err) {
-            setError(err.response?.data?.error || err.message);
+            setError(friendlyError(err));
         } finally {
             setLoading(false);
         }
@@ -247,7 +262,7 @@ function ActionItemsTab({ transcript }) {
             setItems(res.data.actionItems || []);
             setChecked({});
         } catch (err) {
-            setError(err.response?.data?.error || err.message);
+            setError(friendlyError(err));
         } finally {
             setLoading(false);
         }
