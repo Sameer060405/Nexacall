@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import presenceService from '../services/presence.service';
+import friendRequestService from '../services/friendRequest.service';
 import {
   HomeIcon,
   PhoneIcon,
@@ -16,6 +18,25 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuth();
+  const [pendingRequests, setPendingRequests] = useState(0);
+
+  // Connect presence and load pending friend request count
+  useEffect(() => {
+    const userId = user?._id || user?.id;
+    if (!userId) return;
+    presenceService.connect(userId);
+
+    // Initial count
+    friendRequestService.getIncoming().then((res) => {
+      if (res.success) setPendingRequests(res.requests.length);
+    });
+
+    // Real-time updates
+    const unsub = presenceService.on('friend-request-received', () => {
+      setPendingRequests((n) => n + 1);
+    });
+    return () => unsub();
+  }, [user]);
 
   const menuItems = [
     { icon: HomeIcon, label: 'Home', path: '/home' },
@@ -61,7 +82,12 @@ const Sidebar = () => {
                     <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#0B5CFF]" />
                   )}
                   <Icon className="w-5 h-5 flex-shrink-0" />
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.path === '/contacts' && pendingRequests > 0 && (
+                    <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {pendingRequests > 9 ? '9+' : pendingRequests}
+                    </span>
+                  )}
                 </button>
               </li>
             );

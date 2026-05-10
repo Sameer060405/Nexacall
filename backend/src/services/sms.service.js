@@ -40,6 +40,21 @@ export async function sendSMS(to, body) {
 }
 
 /**
+ * Wrapper used by contact.controller → sendContactInvite.
+ * Returns { success, simulated?, sid?, error? } — never throws.
+ */
+export async function sendSMSInvite(to, body) {
+    try {
+        const result = await sendSMS(to, body);
+        if (result.skipped) return { success: true, simulated: true };
+        return { success: true, sid: result.sid };
+    } catch (err) {
+        console.error('[SMS] sendSMSInvite error:', err.message);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
  * Send meeting invite SMS to a list of phone contacts.
  * Runs all sends concurrently; failures are logged individually so one
  * bad number doesn't abort the rest.

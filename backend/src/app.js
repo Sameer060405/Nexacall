@@ -11,6 +11,8 @@ import recordingRoutes from "./routes/recording.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import messageRoutes from "./routes/message.routes.js";
+import friendRequestRoutes from "./routes/friendRequest.routes.js";
 import 'dotenv/config';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -55,6 +57,8 @@ app.use("/api/v1/recordings", recordingRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/ai", aiRoutes);
 app.use("/api/v1/contacts", contactRoutes);
+app.use("/api/v1/messages",        messageRoutes);
+app.use("/api/v1/friend-requests", friendRequestRoutes);
 
 // 404 handler for API routes
 app.use("/api/*", (req, res) => {

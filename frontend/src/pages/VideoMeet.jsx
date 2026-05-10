@@ -215,7 +215,12 @@ export default function VideoMeetComponent() {
         for (const id in connections) {
             if (id === socketIdRef.current) continue;
             const conn = connections[id];
-            conn.addStream(stream);
+            // addTrack replaces deprecated addStream
+            stream.getTracks().forEach((track) => {
+                if (!conn.getSenders().some((s) => s.track === track)) {
+                    conn.addTrack(track, stream);
+                }
+            });
             if (conn.signalingState === 'stable') {
                 conn.createOffer()
                     .then((desc) => {
@@ -263,7 +268,24 @@ export default function VideoMeetComponent() {
         for (const id in connections) {
             if (id === socketIdRef.current) continue;
             const conn = connections[id];
-            conn.addStream(stream);
+            const screenVideoTrack = stream.getVideoTracks()[0];
+            // Replace existing video sender track so the remote side updates seamlessly
+            const videoSender = conn.getSenders().find((s) => s.track?.kind === 'video');
+            if (videoSender && screenVideoTrack) {
+                videoSender.replaceTrack(screenVideoTrack).catch(() => {});
+            } else if (screenVideoTrack) {
+                conn.addTrack(screenVideoTrack, stream);
+            }
+            // Add audio track from screen capture if present
+            const screenAudioTrack = stream.getAudioTracks()[0];
+            if (screenAudioTrack) {
+                const audioSender = conn.getSenders().find((s) => s.track?.kind === 'audio');
+                if (audioSender) {
+                    audioSender.replaceTrack(screenAudioTrack).catch(() => {});
+                } else {
+                    conn.addTrack(screenAudioTrack, stream);
+                }
+            }
             if (conn.signalingState === 'stable') {
                 conn.createOffer()
                     .then((desc) => {
@@ -482,12 +504,19 @@ export default function VideoMeetComponent() {
                     }
                 };
 
-                pc.onaddstream = (event) => {
+                const remoteStream = new MediaStream();
+                pc.ontrack = (event) => {
+                    const streams = event.streams;
+                    (streams.length > 0 ? streams[0].getTracks() : [event.track]).forEach((track) => {
+                        if (!remoteStream.getTracks().find((t) => t.id === track.id)) {
+                            remoteStream.addTrack(track);
+                        }
+                    });
                     const videoExists = videoRef.current.find((v) => v.socketId === socketListId);
                     if (videoExists) {
                         setVideos((prev) => {
                             const updated = prev.map((v) =>
-                                v.socketId === socketListId ? { ...v, stream: event.stream } : v
+                                v.socketId === socketListId ? { ...v, stream: remoteStream } : v
                             );
                             videoRef.current = updated;
                             return updated;
@@ -495,7 +524,7 @@ export default function VideoMeetComponent() {
                     } else {
                         const newVideo = {
                             socketId: socketListId,
-                            stream: event.stream,
+                            stream: remoteStream,
                             autoplay: true,
                             playsinline: true,
                         };
@@ -512,14 +541,21 @@ export default function VideoMeetComponent() {
                     window.localStream = bs;
                     return bs;
                 })();
-                pc.addStream(streamToAdd);
+                streamToAdd.getTracks().forEach((track) => pc.addTrack(track, streamToAdd));
             });
 
             if (id === socketIdRef.current) {
                 for (const id2 in connections) {
                     if (id2 === socketIdRef.current) continue;
                     const conn2 = connections[id2];
-                    try { conn2.addStream(window.localStream); } catch (_) {}
+                    const stream = window.localStream;
+                    if (stream) {
+                        stream.getTracks().forEach((track) => {
+                            if (!conn2.getSenders().some((s) => s.track === track)) {
+                                conn2.addTrack(track, stream);
+                            }
+                        });
+                    }
                     if (conn2.signalingState === 'stable') {
                         conn2.createOffer()
                             .then((desc) => {
@@ -660,10 +696,12 @@ export default function VideoMeetComponent() {
         setMessage('');
     };
 
-    const connect = () => {
+    const connect = ({ video: withVideo = true, audio: withAudio = true } = {}) => {
+        const useVideo = withVideo && videoAvailable;
+        const useAudio = withAudio && audioAvailable;
         setAskForUsername(false);
-        setVideo(videoAvailable);
-        setAudio(audioAvailable);
+        setVideo(useVideo);
+        setAudio(useAudio);
 
         // IMPORTANT: connect to socket AFTER getUserMedia resolves so that
         // window.localStream is guaranteed to be set before any peer connections
@@ -671,11 +709,11 @@ export default function VideoMeetComponent() {
         // placeholder stream instead of the real camera feed.
         const startSocket = () => connectToSocketServer();
 
-        if (navigator.mediaDevices?.getUserMedia && (videoAvailable || audioAvailable)) {
+        if (navigator.mediaDevices?.getUserMedia && (useVideo || useAudio)) {
             navigator.mediaDevices
                 .getUserMedia({
-                    video: videoAvailable,
-                    audio: audioAvailable
+                    video: useVideo,
+                    audio: useAudio
                         ? { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
                         : false,
                 })

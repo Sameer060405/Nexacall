@@ -5,6 +5,8 @@ import LandingPage from './pages/landing';
 import Authentication from './pages/authentication';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { CallProvider } from './contexts/CallContext';
+import IncomingCallModal, { OutgoingCallOverlay } from './components/IncomingCallModal';
 import VideoMeetComponent from './pages/VideoMeet';
 import HomeComponent from './pages/home';
 import History from './pages/history';
@@ -63,6 +65,9 @@ function App() {
       <Router>
         <AuthProvider>
           <ToastProvider>
+            <CallProvider>
+            <IncomingCallModal />
+            <OutgoingCallOverlay />
             <Routes>
               <Route path='/' element={<LandingPage />} />
               <Route path='/auth' element={<Authentication />} />
@@ -85,6 +90,7 @@ function App() {
                 </VideoCallErrorBoundary>
               } />
             </Routes>
+            </CallProvider>
           </ToastProvider>
         </AuthProvider>
       </Router>
